@@ -271,12 +271,25 @@
     </div>
 
     <script>
-        if (!window.indexedDB) {
-            alert("IndexedDB wird in Ihrem Browser nicht unterstützt. Einige Funktionen werden nicht verfügbar sein.");
-        }
-
         const dbRequest = indexedDB.open("ImageDatabase", 1);
         let db;
+        let images = { Frage: null, Antwort: null };
+        let groups = [];
+
+        dbRequest.onupgradeneeded = (event) => {
+            db = event.target.result;
+            const objectStoreNames = Array.from(db.objectStoreNames);
+            if (!objectStoreNames.includes("Frage")) {
+                db.createObjectStore("Frage", { keyPath: "id" });
+            }
+            if (!objectStoreNames.includes("Antwort")) {
+                db.createObjectStore("Antwort", { keyPath: "id" });
+            }
+            if (!objectStoreNames.includes("Metadata")) {
+                db.createObjectStore("Metadata", { keyPath: "id" });
+            }
+        };
+
 
         dbRequest.onsuccess = (event) => {
             db = event.target.result;

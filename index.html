@@ -5,11 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Efficient learning with flashcards - Online flashcards</title>
-    <meta name="description"
-        content="Master your studies with our efficient and user-friendly flashcard platform. Create, organize, and learn with customizable flashcards for any topic. No login required, completely free, and perfect for students, professionals, and lifelong learners.">
-    <meta name="keywords"
-        content="flashcards, learning, education, index cards, pictures, free, no login, study tools, online learning, study aids, educational resources, revision, active recall, spaced repetition, digital flashcards">
-
+    <meta name="description" content="Master your studies with our efficient and user-friendly flashcard platform. Create, organize, and learn with customizable flashcards for any topic. No login required, completely free, and perfect for students, professionals, and lifelong learners.">
+    <meta name="keywords" content="flashcards, learning, education, index cards, pictures, free, no login, study tools, online learning, study aids, educational resources, revision, active recall, spaced repetition, digital flashcards">
+    
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -234,7 +232,22 @@
 
         const dbRequest = indexedDB.open("ImageDatabase", 1);
         let db;
-        let currentCardId = null;
+        let images = { Frage: null, Antwort: null };
+        let groups = [];
+
+        dbRequest.onupgradeneeded = (event) => {
+            db = event.target.result;
+            const objectStoreNames = Array.from(db.objectStoreNames);
+            if (!objectStoreNames.includes("Frage")) {
+                db.createObjectStore("Frage", { keyPath: "id" });
+            }
+            if (!objectStoreNames.includes("Antwort")) {
+                db.createObjectStore("Antwort", { keyPath: "id" });
+            }
+            if (!objectStoreNames.includes("Metadata")) {
+                db.createObjectStore("Metadata", { keyPath: "id" });
+            }
+        };
 
         dbRequest.onsuccess = (event) => {
             db = event.target.result;
@@ -339,18 +352,12 @@
             const selectedGroup = document.getElementById("groupSelect").value;
             getFilteredCardWithLowestPassed(selectedGroup, (metadata) => {
                 if (!metadata) {
-                    // No flashcards found, show manual image
-                    document.getElementById("cardFront").innerHTML = `<img src="/manual.jpg" alt="Manual">`;
-                    document.getElementById("cardBack").innerHTML = `<p>Flip to start creating your first flashcard!</p>`;
+                    alert("Keine Karten in dieser Gruppe gefunden.");
                     return;
                 }
                 currentCardId = metadata.id;
                 getEntryById("Frage", metadata.id, (frage) => {
-                    if (frage) {
-                        document.getElementById("cardFront").innerHTML = `<img src="${frage.image}" alt="Frage">`;
-                    } else {
-                        document.getElementById("cardFront").innerHTML = `<img src="/manual.jpg" alt="Manual">`;
-                    }
+                    document.getElementById("cardFront").innerHTML = `<img src="${frage.image}" alt="Frage">`;
                 });
                 getEntryById("Antwort", metadata.id, (antwort) => {
                     if (antwort) {
@@ -361,7 +368,6 @@
                 });
             });
         }
-
 
         document.getElementById("card").addEventListener("click", () => {
             const flipCard = document.getElementById("flipCard");
