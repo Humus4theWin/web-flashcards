@@ -242,11 +242,11 @@
         </div>
         <div class="tool-section">
             <h2>Delete Decks</h2>
-            <label for="deleteGroupSelect">Select Group to Delete:</label>
+            <label for="deleteGroupSelect">Select Deck to Delete:</label>
             <select id="deleteGroupSelect">
-                <option value="" selected disabled>Select Group</option>
+                <option value="" selected disabled>Select Deck</option>
             </select>
-            <button class="red" id="deleteGroupButton">Delete Group</button>
+            <button class="red" id="deleteGroupButton">Delete Deck</button>
         </div>
     </div>
 
@@ -257,7 +257,7 @@
             <tr>
                 <th>Question</th>
                 <th>Answer</th>
-                <th>Group</th>
+                <th>Deck</th>
                 <th>Views</th>
                 <th>Score</th>
                 <th>Action</th>
@@ -425,7 +425,7 @@
 
                 // Populate DELETE group select
                 const deleteGroupSelect = document.getElementById("deleteGroupSelect");
-                deleteGroupSelect.innerHTML = '<option value="" disabled selected>Select Group</option>'; // Reset dropdown
+                deleteGroupSelect.innerHTML = '<option value="" disabled selected>Select Deck</option>'; // Reset dropdown
                 groups.forEach(group => {
                     const option = document.createElement("option");
                     option.value = group;
