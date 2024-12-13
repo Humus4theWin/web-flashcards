@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="de">
 
 <head>
@@ -98,13 +98,14 @@
 
         dbRequest.onupgradeneeded = (event) => {
             db = event.target.result;
-            if (!db.objectStoreNames.contains("Frage")) {
+            const objectStoreNames = Array.from(db.objectStoreNames);
+            if (!objectStoreNames.includes("Frage")) {
                 db.createObjectStore("Frage", { keyPath: "id" });
             }
-            if (!db.objectStoreNames.contains("Antwort")) {
+            if (!objectStoreNames.includes("Antwort")) {
                 db.createObjectStore("Antwort", { keyPath: "id" });
             }
-            if (!db.objectStoreNames.contains("Metadata")) {
+            if (!objectStoreNames.includes("Metadata")) {
                 db.createObjectStore("Metadata", { keyPath: "id" });
             }
         };
@@ -122,6 +123,11 @@
         }
 
         function saveToIndexedDB(storeName, data) {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
             const transaction = db.transaction(storeName, "readwrite");
             const store = transaction.objectStore(storeName);
             store.add(data);
