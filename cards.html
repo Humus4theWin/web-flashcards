@@ -59,14 +59,9 @@
             cursor: pointer;
         }
 
-        button {
-            padding: 5px 10px;
-            font-size: 14px;
+        .red {
             background-color: #ff4d4d;
             color: white;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
         }
 
         button:hover {
@@ -91,61 +86,48 @@
             max-height: 90%;
         }
 
-        .import-export-columns {
+
+        .tool-sections {
             display: flex;
-            gap: 50px;
-            /* Space between columns */
-            justify-content: center;
-            align-items: flex-start;
+            flex-wrap: wrap;
+            /* Allow sections to wrap when the width is too small */
+            gap: 20px;
+            /* Space between sections */
+            justify-content: flex-start;
+            /* Align items to the start */
             margin-bottom: 30px;
         }
 
-        .import-export-columns>div {
-            flex: 1;
-            max-width: 400px;
-            text-align: center;
-        }
-
-        .export-column,
-        .import-column {
+        .tool-section {
+            flex: 1 1 300px;
+            /* Flexible width, minimum 300px */
+            min-width: 250px;
+            /* Ensure sections don't shrink too much */
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 5px;
             background-color: #f9f9f9;
         }
 
-        .drop-zone {
-            width: 100%;
-            height: 120px;
-            border: 2px dashed #ccc;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            position: relative;
-            margin-top: 10px;
-        }
-
-        .drop-zone p {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .drop-zone.hover {
-            border-color: #007BFF;
-            background-color: #f0f8ff;
+        .tool-section h2 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 18px;
         }
 
         label {
             display: block;
-            margin-top: 10px;
+            margin: 10px 0 5px;
             font-size: 14px;
         }
 
+        select,
+        button,
+        input[type="checkbox"] {
+            margin-top: 5px;
+        }
 
         button {
-            margin-top: 10px;
             padding: 8px 15px;
             font-size: 14px;
             border-radius: 5px;
@@ -157,6 +139,28 @@
 
         button:hover {
             background-color: #0056b3;
+        }
+
+        .drop-zone {
+            width: 100%;
+            height: 120px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .drop-zone p {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .drop-zone.hover {
+            border-color: #007BFF;
+            background-color: #f0f8ff;
         }
     </style>
 </head>
@@ -170,18 +174,18 @@
         </nav>
     </header>
 
-    <h1>Export / import cards</h1>
-    <div class="import-export-columns">
-        <div class="export-column">
-            <h1>Export Cards</h1>
+    <h1>Tools</h1>
+    <div class="tool-sections">
+        <div class="tool-section">
+            <h2>Export Cards</h2>
             <label for="exportGroupSelect">Export Group:</label>
             <select id="exportGroupSelect">
                 <option value="all" selected>All</option>
             </select>
             <button id="exportButton">Export</button>
         </div>
-        <div class="import-column">
-            <h1>Import Cards</h1>
+        <div class="tool-section">
+            <h2>Import Cards</h2>
             <div id="importDropZone" class="drop-zone">
                 <p>Drag and drop a JSON file here or click to select a file</p>
             </div>
@@ -190,17 +194,16 @@
                 Clean import (delete views & score)
             </label>
         </div>
+        <div class="tool-section">
+            <h2>Delete Decks</h2>
+            <label for="deleteGroupSelect">Select Group to Delete:</label>
+            <select id="deleteGroupSelect">
+                <option value="" selected disabled>Select Group</option>
+            </select>
+            <button class="red" id="deleteGroupButton">Delete Group</button>
+        </div>
     </div>
 
-
-    <h1>Delete Decks</h1>
-    <div>
-        <label for="deleteGroupSelect">Select Group to Delete:</label>
-        <select id="deleteGroupSelect">
-            <option value="" selected disabled>Select Group</option>
-        </select>
-        <button id="deleteGroupButton">Delete Group</button>
-    </div>
 
     <h1>List of all cards</h1>
     <table>
