@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alle Bilder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
+            padding: 5px 10px;
+        }
+
+        nav a.active {
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+        }
+
+        nav a:hover {
+            background-color: #ddd;
+            border-radius: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        img {
+            max-width: 150px;
+            max-height: 100px;
+            cursor: pointer;
+        }
+        button {
+            padding: 5px 10px;
+            font-size: 14px;
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #e60000;
+        }
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .fullscreen img {
+            max-width: 90%;
+            max-height: 90%;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="/index.html">Learn</a>
+            <a href="/upload.html" >Upload</a>
+            <a href="/cards.html" class="active">Cards</a>
+        </nav>
+    </header>
+    <h1>Liste aller Karten</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Frage</th>
+                <th>Antwort</th>
+                <th>Aufrufe</th>
+                <th>Bestanden</th>
+                <th>Aktion</th>
+            </tr>
+        </thead>
+        <tbody id="cardList"></tbody>
+    </table>
+
+    <div id="fullscreenViewer" class="fullscreen" style="display: none;">
+        <img id="fullscreenImage" src="" alt="Vollbildansicht">
+    </div>
+
+    <script>
+        if (!window.indexedDB) {
+            alert("IndexedDB wird in Ihrem Browser nicht unterstützt. Einige Funktionen werden nicht verfügbar sein.");
+        }
+
+        const dbRequest = indexedDB.open("ImageDatabase", 1);
+        let db;
+
+        dbRequest.onsuccess = (event) => {
+            db = event.target.result;
+            loadAllCards();
+        };
+
+        dbRequest.onerror = (event) => {
+            console.error("Fehler beim Öffnen der IndexedDB:", event.target.error);
+        };
+
+        function loadAllCards() {
+            const transaction = db.transaction(["Frage", "Antwort", "Metadata"], "readonly");
+            const frageStore = transaction.objectStore("Frage");
+            const antwortStore = transaction.objectStore("Antwort");
+            const metadataStore = transaction.objectStore("Metadata");
+
+            const metadataRequest = metadataStore.getAll();
+            metadataRequest.onsuccess = () => {
+                const metadataList = metadataRequest.result;
+                metadataList.sort((a, b) => a.passed - b.passed);
+
+                const tableBody = document.getElementById("cardList");
+                tableBody.innerHTML = "";
+
+                metadataList.forEach((metadata) => {
+                    const frageRequest = frageStore.get(metadata.id);
+                    const antwortRequest = antwortStore.get(metadata.id);
+
+                    frageRequest.onsuccess = () => {
+                        antwortRequest.onsuccess = () => {
+                            const frage = frageRequest.result;
+                            const antwort = antwortRequest.result;
+
+                            const row = document.createElement("tr");
+
+                            const frageCell = document.createElement("td");
+                            frageCell.innerHTML = frage ? `<img src="${frage.image}" alt="Frage" onclick="showFullscreen('${frage.image}')">` : "Keine Frage gefunden";
+                            row.appendChild(frageCell);
+
+                            const antwortCell = document.createElement("td");
+                            antwortCell.innerHTML = antwort ? `<img src="${antwort.image}" alt="Antwort" onclick="showFullscreen('${antwort.image}')">` : "Keine Antwort gefunden";
+                            row.appendChild(antwortCell);
+
+                            const viewsCell = document.createElement("td");
+                            viewsCell.textContent = metadata.views;
+                            row.appendChild(viewsCell);
+
+                            const passedCell = document.createElement("td");
+                            passedCell.textContent = metadata.passed.toFixed(2);
+                            row.appendChild(passedCell);
+
+                            const actionCell = document.createElement("td");
+                            const deleteButton = document.createElement("button");
+                            deleteButton.textContent = "Löschen";
+                            deleteButton.addEventListener("click", () => deleteCard(metadata.id));
+                            actionCell.appendChild(deleteButton);
+                            row.appendChild(actionCell);
+
+                            tableBody.appendChild(row);
+                        };
+                    };
+                });
+            };
+
+            metadataRequest.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
+            };
+        }
+
+        function deleteCard(id) {
+            const transaction = db.transaction(["Frage", "Antwort", "Metadata"], "readwrite");
+            const frageStore = transaction.objectStore("Frage");
+            const antwortStore = transaction.objectStore("Antwort");
+            const metadataStore = transaction.objectStore("Metadata");
+
+            frageStore.delete(id);
+            antwortStore.delete(id);
+            metadataStore.delete(id);
+
+            transaction.oncomplete = () => {
+                loadAllCards();
+            };
+
+            transaction.onerror = (event) => {
+                console.error("Fehler beim Löschen der Karte:", event.target.error);
+            };
+        }
+
+        function showFullscreen(imageSrc) {
+            const fullscreenViewer = document.getElementById("fullscreenViewer");
+            const fullscreenImage = document.getElementById("fullscreenImage");
+            fullscreenImage.src = imageSrc;
+            fullscreenViewer.style.display = "flex";
+        }
+
+        document.getElementById("fullscreenViewer").addEventListener("click", () => {
+            document.getElementById("fullscreenViewer").style.display = "none";
+        });
+    </script>
+</body>
+</html>
