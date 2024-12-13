@@ -135,9 +135,9 @@
         </div>
     </div>
 
+    <h2>Card deck</h2>
     <div class="input-group">
         <input type="text" id="groupInput" placeholder="Enter group name">
-        <button id="addGroupButton">Add Group</button>
     </div>
 
     <div class="chips-container" id="chipsContainer"></div>
@@ -273,16 +273,12 @@
         }
 
 
-        document.getElementById("addGroupButton").addEventListener("click", () => {
-            const groupName = document.getElementById("groupInput").value.trim();
-            if (groupName) {
-                addGroup(groupName);
-            }
-        });
+   
 
         document.getElementById("saveButton").addEventListener("click", () => {
             const groupName = document.getElementById("groupInput").value.trim();
             if (images.Frage && images.Antwort && groupName) {
+                addGroup(groupName);
                 const id = generateRandomId();
                 const metadata = {
                     id: id,
@@ -311,3 +307,4 @@
 </body>
 
 </html>
+
