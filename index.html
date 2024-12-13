@@ -6,177 +6,179 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
 
-body {
-    font-family: Arial, sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    background-color: #f9f9f9;
-}
+        header {
+            margin-bottom: 20px;
+        }
 
-header {
-    margin-bottom: 20px;
-}
+        nav {
+            display: flex;
+            gap: 15px;
+        }
 
-nav {
-    display: flex;
-    gap: 15px;
-}
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
 
-nav a {
-    text-decoration: none;
-    color: #333;
-    font-size: 18px;
-    padding: 5px 10px;
-    border-radius: 5px;
-}
+        nav a.active {
+            background-color: #007BFF;
+            color: white;
+        }
 
-nav a.active {
-    background-color: #007BFF;
-    color: white;
-}
+        nav a:hover {
+            background-color: #ddd;
+        }
 
-nav a:hover {
-    background-color: #ddd;
-}
+        h1 {
+            margin-top: 20px;
+            font-size: 24px;
+            color: #333;
+        }
 
-h1 {
-    margin-top: 20px;
-    font-size: 24px;
-    color: #333;
-}
+        h2 {
+            margin-top: 10px;
+            margin-bottom: 10px;
+            font-size: 20px;
+            color: #555;
+        }
 
-h2 {
-    margin-top: 10px;
-    margin-bottom: 10px;
-    font-size: 20px;
-    color: #555;
-}
+        #card {
+            display: inline-block;
+            perspective: 1000px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            /* No fixed width/height */
+        }
 
-#card {
-    display: inline-block;
-    perspective: 1000px;
-    background-color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border-radius: 10px;
-    /* No fixed width/height */
-}
+        .flip-card {
+            display: inline-block;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s;
+            /* The size of .flip-card will be defined by the front content */
+        }
 
-.flip-card {
-    display: inline-block;
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 0.8s;
-    /* The size of .flip-card will be defined by the front content */
-}
+        .flip-card.flipped {
+            transform: rotateY(180deg);
+        }
 
-.flip-card.flipped {
-    transform: rotateY(180deg);
-}
+        .card-front,
+        .card-back {
+            backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #f9f9f9;
+        }
 
-.card-front, 
-.card-back {
-    backface-visibility: hidden;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    background-color: #f9f9f9;
-}
+        /* Keep the front side in normal flow, so it defines the size */
+        .card-front {
+            position: relative;
+        }
 
-/* Keep the front side in normal flow, so it defines the size */
-.card-front {
-    position: relative;
-}
+        /* The back side is absolutely positioned to overlap the front */
+        .card-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: rotateY(180deg);
+            width: 100%;
+            height: 100%;
+        }
 
-/* The back side is absolutely positioned to overlap the front */
-.card-back {
-    position: absolute;
-    top: 0;
-    left: 0;
-    transform: rotateY(180deg);
-    width: 100%;
-    height: 100%;
-}
-
-.card-front img, 
-.card-back img {
-    display: block;
-    max-width: 100%;
-    height: auto;
-    object-fit: contain;
-}
+        .card-front img,
+        .card-back img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
 
 
-button {
-    margin: 10px;
-    padding: 10px 20px;
-    font-size: 16px;
-    border-radius: 5px;
-    background-color: #007BFF;
-    color: white;
-    border: none;
-    cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
-}
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
 
-button:hover {
-    background-color: #0056b3;
-    transform: scale(1.05);
-}
+        button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
 
-button:active {
-    background-color: #004080;
-    transform: scale(1);
-}
+        button:active {
+            background-color: #004080;
+            transform: scale(1);
+        }
 
-footer {
-    font-size: 12px;
-    text-align: center;
-    width: 100%;
-    margin-top: 20px;
-    color: #555;
-}
+        footer {
+            font-size: 12px;
+            text-align: center;
+            width: 100%;
+            margin-top: 20px;
+            color: #555;
+        }
 
-label {
-    font-size: 14px;
-    margin-bottom: 5px;
-    color: #555;
-}
+        label {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #555;
+        }
 
-select {
-    padding: 8px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    cursor: pointer;
-    background-color: #fff;
-    transition: border-color 0.3s;
-}
+        select {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #fff;
+            transition: border-color 0.3s;
+        }
 
-select:focus {
-    border-color: #007BFF;
-    outline: none;
-}
+        select:focus {
+            border-color: #007BFF;
+            outline: none;
+        }
 
-img {
-    max-width: 100%;
-    max-height: 100%;
-    cursor: pointer;
-    border: 1px solid #ccc; /* Add a border */
-    border-radius: 5px; /* Add rounded corners */
-    box-sizing: border-box; /* Ensures border is included within max dimensions */
-    transition: transform 0.2s, border-color 0.3s;
-}
+        img {
+            max-width: 100%;
+            max-height: 100%;
+            max-height: 70vh;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            /* Add a border */
+            border-radius: 5px;
+            /* Add rounded corners */
+            box-sizing: border-box;
+            /* Ensures border is included within max dimensions */
+            transition: transform 0.2s, border-color 0.3s;
+        }
 
-img:hover {
-    transform: scale(1.01);
-    border-color: #007BFF;
-}
-
+        img:hover {
+            transform: scale(1.01);
+            border-color: #007BFF;
+        }
     </style>
 </head>
 
@@ -372,15 +374,15 @@ img:hover {
     </script>
 </body>
 <footer>
-    <p>Linus Pfoch</p>
-    <p>Lindenstr. 14, 16548 Glienicke DE</p>
-    <p>linus.pfoch@softcompare.de</p>
-
     <form action="https://www.paypal.com/donate" method="post" target="_top">
         <input type="hidden" name="hosted_button_id" value="V2QVTT6TSDWYC" />
-        <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit" title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
-       </form>
-        
+        <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit"
+            title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+    </form>
 
+    <p>Linus Pfoch</p>
+    <p>Lindenstr. 14, 16548 Glienicke DE</p>
+    <p>info@web-flashcards.com</p>
+</footer>
 
 </html>
