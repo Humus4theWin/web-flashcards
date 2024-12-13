@@ -338,6 +338,8 @@
                 if (entries.length > 0) {
                     const lowestPassedCard = entries.reduce((min, entry) => entry.passed < min.passed ? entry : min, entries[0]);
                     callback(lowestPassedCard);
+                } else {
+                    callback();
                 }
             };
 
@@ -349,33 +351,40 @@
         document.getElementById("groupSelect").addEventListener("change", () => {
             loadNextCard();
         });
-
         function loadNextCard() {
             const selectedGroup = document.getElementById("groupSelect").value;
+
             getFilteredCardWithLowestPassed(selectedGroup, (metadata) => {
                 if (!metadata) {
-                    // No flashcards found, show manual image
-                    document.getElementById("cardFront").innerHTML = `<img src="/manual.jpg" alt="Manual">`;
+                    // No flashcards found, show manual image and placeholder
+                    document.getElementById("cardFront").innerHTML = `<img src="/manual.jpg" alt="Manual" style="width:100%; height:auto;">`;
                     document.getElementById("cardBack").innerHTML = `<p>Flip to start creating your first flashcard!</p>`;
                     return;
                 }
+
                 currentCardId = metadata.id;
+                console.log("Frage");
+                // Fetch front (Frage) and handle missing entries
                 getEntryById("Frage", metadata.id, (frage) => {
-                    if (frage) {
-                        document.getElementById("cardFront").innerHTML = `<img src="${frage.image}" alt="Frage">`;
+                    console.log("Frage", frage);
+                    if (frage && frage.image) {
+                        document.getElementById("cardFront").innerHTML = `<img src="${frage.image}" alt="Frage" style="width:100%; height:auto;">`;
                     } else {
-                        document.getElementById("cardFront").innerHTML = `<img src="/manual.jpg" alt="Manual">`;
+                        document.getElementById("cardFront").innerHTML = `<img src="/manual.jpg" alt="Manual" style="width:100%; height:auto;">`;
                     }
                 });
+
+                // Fetch back (Antwort) and handle missing entries
                 getEntryById("Antwort", metadata.id, (antwort) => {
-                    if (antwort) {
-                        document.getElementById("cardBack").innerHTML = `<img src="${antwort.image}" alt="Antwort">`;
+                    if (antwort && antwort.image) {
+                        document.getElementById("cardBack").innerHTML = `<img src="${antwort.image}" alt="Antwort" style="width:100%; height:auto;">`;
                     } else {
-                        document.getElementById("cardBack").innerHTML = "<p>Keine Antwort gefunden</p>";
+                        document.getElementById("cardBack").innerHTML = `<p>No answer available. Start creating your flashcards!</p>`;
                     }
                 });
             });
         }
+
 
 
         document.getElementById("card").addEventListener("click", () => {
