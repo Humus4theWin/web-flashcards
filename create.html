@@ -212,7 +212,7 @@
     <div class="card-deck-container">
         <h2>Card deck</h2>
         <div class="input-group">
-            <input type="text" id="groupInput" placeholder="Enter group name">
+            <input type="text" id="groupInput" placeholder="Enter deck name">
         </div>
         <div class="chips-container" id="chipsContainer"></div>
     </div>
@@ -395,7 +395,13 @@
 
         document.getElementById("saveButton").addEventListener("click", () => {
             const groupName = document.getElementById("groupInput").value.trim();
-            if (images.Frage && images.Antwort && groupName) {
+
+            if (!groupName) {
+                groupName = "default"; // Default group name
+            }
+
+
+            if (images.Frage && images.Antwort) {
                 addGroup(groupName);
                 const id = generateRandomId();
                 const metadata = {
@@ -415,7 +421,7 @@
                 document.getElementById("dropZone2").innerHTML = '<p>Bild 2 hierhin ziehen</p>';
                 //document.getElementById("groupInput").value = "";
             } else {
-                alert("Bitte beide Bilder hochladen und eine Gruppe angeben, bevor Sie speichern.");
+                alert("Bitte beide Bilder hochladen, bevor Sie speichern.");
             }
         });
 
