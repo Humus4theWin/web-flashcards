@@ -13,7 +13,9 @@
             align-items: center;
             padding: 20px;
         }
-
+        header{
+            margin-bottom: 15px;
+        }
         nav a {
             text-decoration: none;
             color: #333;
@@ -95,6 +97,7 @@
             text-align: center;
             width: 100%;
         }
+
     </style>
 </head>
 
@@ -106,6 +109,12 @@
             <a href="/cards.html">Cards</a>
         </nav>
     </header>
+    <div>
+        <label for="groupSelect">Select Group:</label>
+        <select id="groupSelect">
+            <option value="all" selected>All</option>
+        </select>
+    </div>
 
     <div id="card">
         <div class="flip-card" id="flipCard">
@@ -119,6 +128,9 @@
         <button id="hardButton">Hard</button>
     </div>
 
+
+
+
     <script>
         if (!window.indexedDB) {
             alert("IndexedDB wird in Ihrem Browser nicht unterstützt. Einige Funktionen werden nicht verfügbar sein.");
@@ -130,6 +142,7 @@
 
         dbRequest.onsuccess = (event) => {
             db = event.target.result;
+            populateGroupSelect();
             loadNextCard();
         };
 
@@ -169,8 +182,70 @@
             };
         }
 
+        function populateGroupSelect() {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
+            const transaction = db.transaction("Metadata", "readonly");
+            const store = transaction.objectStore("Metadata");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const groups = new Set(
+                    request.result
+                        .map(metadata => metadata.group)
+                        .filter(group => group !== undefined && group !== null && group.trim() !== "")
+                );
+                const groupSelect = document.getElementById("groupSelect");
+                groupSelect.innerHTML = '<option value="all" selected>All</option>'; // Clear existing options and add default
+                groups.forEach(group => {
+                    const option = document.createElement("option");
+                    option.value = group;
+                    option.textContent = group;
+                    groupSelect.appendChild(option);
+                });
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Gruppen:", event.target.error);
+            };
+        }
+
+
+        function getFilteredCardWithLowestPassed(selectedGroup, callback) {
+            const transaction = db.transaction("Metadata", "readonly");
+            const store = transaction.objectStore("Metadata");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                let entries = request.result;
+                if (selectedGroup !== "all") {
+                    entries = entries.filter(entry => entry.group === selectedGroup);
+                }
+                if (entries.length > 0) {
+                    const lowestPassedCard = entries.reduce((min, entry) => entry.passed < min.passed ? entry : min, entries[0]);
+                    callback(lowestPassedCard);
+                }
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
+            };
+        }
+
+        document.getElementById("groupSelect").addEventListener("change", () => {
+            loadNextCard();
+        });
+
         function loadNextCard() {
-            getCardWithLowestPassed((metadata) => {
+            const selectedGroup = document.getElementById("groupSelect").value;
+            getFilteredCardWithLowestPassed(selectedGroup, (metadata) => {
+                if (!metadata) {
+                    alert("Keine Karten in dieser Gruppe gefunden.");
+                    return;
+                }
                 currentCardId = metadata.id;
                 getEntryById("Frage", metadata.id, (frage) => {
                     document.getElementById("cardFront").innerHTML = `<img src="${frage.image}" alt="Frage">`;
@@ -213,6 +288,8 @@
         document.getElementById("easyButton").addEventListener("click", () => updateMetadata(3));
         document.getElementById("mediumButton").addEventListener("click", () => updateMetadata(2));
         document.getElementById("hardButton").addEventListener("click", () => updateMetadata(1));
+
+
     </script>
 </body>
 <footer>

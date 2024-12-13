@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="de">
 
 <head>
@@ -12,6 +12,10 @@
             flex-direction: column;
             align-items: center;
             padding: 20px;
+        }
+
+        header {
+            margin-bottom: 15px;
         }
 
         nav a {
@@ -60,6 +64,51 @@
             font-size: 16px;
             color: #999;
         }
+
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .chip {
+            padding: 5px 10px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+        }
+
+        .chip:hover {
+            background-color: #0056b3;
+        }
+
+        .input-group {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-group input {
+            padding: 5px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .input-group button {
+            padding: 5px 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .input-group button:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 
@@ -86,6 +135,13 @@
         </div>
     </div>
 
+    <div class="input-group">
+        <input type="text" id="groupInput" placeholder="Enter group name">
+        <button id="addGroupButton">Add Group</button>
+    </div>
+
+    <div class="chips-container" id="chipsContainer"></div>
+
     <button id="saveButton">Save</button>
 
     <script>
@@ -96,6 +152,7 @@
         const dbRequest = indexedDB.open("ImageDatabase", 1);
         let db;
         let images = { Frage: null, Antwort: null };
+        let groups = [];
 
         dbRequest.onupgradeneeded = (event) => {
             db = event.target.result;
@@ -113,6 +170,7 @@
 
         dbRequest.onsuccess = (event) => {
             db = event.target.result;
+            loadGroups();
         };
 
         dbRequest.onerror = (event) => {
@@ -172,11 +230,63 @@
             });
         }
 
+        function addGroup(name) {
+            if (!groups.includes(name)) {
+                groups.push(name);
+                renderChips();
+            }
+        }
+
+        function renderChips() {
+            const container = document.getElementById("chipsContainer");
+            container.innerHTML = "";
+            groups.forEach(group => {
+                const chip = document.createElement("div");
+                chip.classList.add("chip");
+                chip.textContent = group;
+                chip.addEventListener("click", () => {
+                    document.getElementById("groupInput").value = group;
+                });
+                container.appendChild(chip);
+            });
+        }
+
+        function loadGroups() {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
+            const transaction = db.transaction("Metadata", "readonly");
+            const store = transaction.objectStore("Metadata");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const allGroups = request.result.map(metadata => metadata.group);
+                groups = [...new Set(allGroups)]; // Entferne doppelte Gruppennamen
+                renderChips();
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Laden der Gruppen:", event.target.error);
+            };
+        }
+
+
+        document.getElementById("addGroupButton").addEventListener("click", () => {
+            const groupName = document.getElementById("groupInput").value.trim();
+            if (groupName) {
+                addGroup(groupName);
+            }
+        });
+
         document.getElementById("saveButton").addEventListener("click", () => {
-            if (images.Frage && images.Antwort) {
+            const groupName = document.getElementById("groupInput").value.trim();
+            if (images.Frage && images.Antwort && groupName) {
                 const id = generateRandomId();
                 const metadata = {
                     id: id,
+                    group: groupName,
                     createdAt: new Date().toISOString(),
                     views: 0,
                     passed: 0
@@ -189,8 +299,9 @@
                 images = { Frage: null, Antwort: null };
                 document.getElementById("dropZone1").innerHTML = '<p>Bild 1 hierhin ziehen</p>';
                 document.getElementById("dropZone2").innerHTML = '<p>Bild 2 hierhin ziehen</p>';
+                document.getElementById("groupInput").value = "";
             } else {
-                alert("Bitte beide Bilder hochladen, bevor Sie speichern.");
+                alert("Bitte beide Bilder hochladen und eine Gruppe angeben, bevor Sie speichern.");
             }
         });
 

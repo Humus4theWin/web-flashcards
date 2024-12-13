@@ -9,7 +9,9 @@
             font-family: Arial, sans-serif;
             padding: 20px;
         }
-
+        header{
+            margin-bottom: 15px;
+        }
         nav a {
             text-decoration: none;
             color: #333;
@@ -90,6 +92,7 @@
             <tr>
                 <th>Question</th>
                 <th>Answer</th>
+                <th>Group</th>
                 <th>Views</th>
                 <th>Score</th>
                 <th>Action</th>
@@ -151,6 +154,10 @@
                             const antwortCell = document.createElement("td");
                             antwortCell.innerHTML = antwort ? `<img src="${antwort.image}" alt="Antwort" onclick="showFullscreen('${antwort.image}')">` : "Keine Antwort gefunden";
                             row.appendChild(antwortCell);
+
+                            const group = document.createElement("td");
+                            group.textContent = metadata.group;
+                            row.appendChild(group);
 
                             const viewsCell = document.createElement("td");
                             viewsCell.textContent = metadata.views;
