@@ -93,9 +93,10 @@
 
         .import-export-container {
             display: flex;
-            gap: 20px;
+            gap: 50px;
+            /* Increased space between sections */
             justify-content: center;
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
 
         .import-export-container div {
@@ -109,10 +110,32 @@
             font-size: 14px;
         }
 
-        .import-export-container button,
         .import-export-container select,
-        .import-export-container input {
+        .import-export-container button {
             margin-top: 5px;
+        }
+
+        .drop-zone {
+            width: 200px;
+            height: 100px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .drop-zone.hover {
+            border-color: #007BFF;
+            background-color: #f0f8ff;
+        }
+
+        .drop-zone p {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
         }
     </style>
 </head>
@@ -121,7 +144,7 @@
     <header>
         <nav>
             <a href="/index.html">Learn</a>
-            <a href="/upload.html">Upload</a>
+            <a href="/create.html">Create</a>
             <a href="/cards.html" class="active">Cards</a>
         </nav>
     </header>
@@ -135,11 +158,18 @@
             </select>
             <button id="exportButton">Export</button>
         </div>
-        <div>
-            <label for="importFile">Import Flashcards:</label>
-            <input type="file" id="importFile" accept="application/json">
-            <button id="importButton">Import</button>
+        <div id="importDropZone" class="drop-zone">
+            <p>Drag and drop a JSON file here or click to select a file</p>
         </div>
+    </div>
+
+    <h1>Delete Decks</h1>
+    <div>
+        <label for="deleteGroupSelect">Select Group to Delete:</label>
+        <select id="deleteGroupSelect">
+            <option value="" selected disabled>Select Group</option>
+        </select>
+        <button id="deleteGroupButton">Delete Group</button>
     </div>
 
     <h1>List of all cards</h1>
@@ -171,7 +201,7 @@
 
         dbRequest.onsuccess = (event) => {
             db = event.target.result;
-            populateExportGroupSelect();
+            populateGroupSelects();
             loadAllCards();
         };
 
@@ -274,7 +304,7 @@
 
 
         // Export
-        function populateExportGroupSelect() {
+        function populateGroupSelects() {
             if (!db) {
                 console.error("Datenbank ist nicht initialisiert.");
                 return;
@@ -290,6 +320,8 @@
                         .map(metadata => metadata.group)
                         .filter(group => group !== undefined && group !== null && group.trim() !== "")
                 );
+
+                // Populate EXPORT group select
                 const exportGroupSelect = document.getElementById("exportGroupSelect");
                 exportGroupSelect.innerHTML = '<option value="all" selected>All</option>'; // Add default "All"
                 groups.forEach(group => {
@@ -298,12 +330,23 @@
                     option.textContent = group;
                     exportGroupSelect.appendChild(option);
                 });
+
+                // Populate DELETE group select
+                const deleteGroupSelect = document.getElementById("deleteGroupSelect");
+                deleteGroupSelect.innerHTML = '<option value="" disabled selected>Select Group</option>'; // Reset dropdown
+                groups.forEach(group => {
+                    const option = document.createElement("option");
+                    option.value = group;
+                    option.textContent = group;
+                    deleteGroupSelect.appendChild(option);
+                });
             };
 
             request.onerror = (event) => {
                 console.error("Fehler beim Abrufen der Gruppen:", event.target.error);
             };
         }
+
 
         function exportGroupToJSON(selectedGroup) {
             if (!db) {
@@ -367,18 +410,55 @@
 
 
         // Import
-        function importFlashcardsFromJSON(file) {
-            if (!db) {
-                console.error("Datenbank ist nicht initialisiert.");
-                return;
-            }
+        function setupDropZone(dropZoneId) {
+            const dropZone = document.getElementById(dropZoneId);
 
+            dropZone.addEventListener("dragover", (event) => {
+                event.preventDefault();
+                dropZone.classList.add("hover");
+            });
+
+            dropZone.addEventListener("dragleave", () => {
+                dropZone.classList.remove("hover");
+            });
+
+            dropZone.addEventListener("drop", (event) => {
+                event.preventDefault();
+                dropZone.classList.remove("hover");
+
+                const file = event.dataTransfer.files[0];
+                if (file && file.type === "application/json") {
+                    importFlashcardsFromFile(file);
+                } else {
+                    alert("Bitte nur gültige JSON-Dateien hochladen!");
+                }
+            });
+
+            dropZone.addEventListener("click", () => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = "application/json";
+                input.style.display = "none";
+
+                input.addEventListener("change", () => {
+                    const file = input.files[0];
+                    if (file && file.type === "application/json") {
+                        importFlashcardsFromFile(file);
+                    } else {
+                        alert("Bitte nur gültige JSON-Dateien hochladen!");
+                    }
+                });
+
+                input.click();
+            });
+        }
+
+        function importFlashcardsFromFile(file) {
             const reader = new FileReader();
 
             reader.onload = (event) => {
                 try {
                     const data = JSON.parse(event.target.result);
-
                     const transaction = db.transaction(["Frage", "Antwort", "Metadata"], "readwrite");
                     const frageStore = transaction.objectStore("Frage");
                     const antwortStore = transaction.objectStore("Antwort");
@@ -401,7 +481,7 @@
 
                     transaction.oncomplete = () => {
                         alert("Import erfolgreich abgeschlossen!");
-                        loadAllCards(); // Refresh the list of cards
+                        loadAllCards();
                     };
 
                     transaction.onerror = (event) => {
@@ -421,15 +501,61 @@
             reader.readAsText(file);
         }
 
-        document.getElementById("importButton").addEventListener("click", () => {
-            const fileInput = document.getElementById("importFile");
-            const file = fileInput.files[0];
-            if (file) {
-                importFlashcardsFromJSON(file);
+
+        setupDropZone("importDropZone");
+
+
+        // Delete Group
+        function deleteCardsByGroup(group) {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
+            const transaction = db.transaction(["Frage", "Antwort", "Metadata"], "readwrite");
+            const metadataStore = transaction.objectStore("Metadata");
+            const frageStore = transaction.objectStore("Frage");
+            const antwortStore = transaction.objectStore("Antwort");
+
+            const request = metadataStore.getAll();
+
+            request.onsuccess = () => {
+                const cardsToDelete = request.result.filter(metadata => metadata.group === group);
+
+                cardsToDelete.forEach(card => {
+                    metadataStore.delete(card.id);
+                    frageStore.delete(card.id);
+                    antwortStore.delete(card.id);
+                });
+
+                transaction.oncomplete = () => {
+                    alert(`Alle Karten der Gruppe "${group}" wurden gelöscht.`);
+                    loadAllCards(); // Refresh the list of cards
+                    populateDeleteGroupSelect(); // Refresh the group dropdown
+                };
+
+                transaction.onerror = (event) => {
+                    console.error("Fehler beim Löschen der Karten:", event.target.error);
+                };
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
+            };
+        }
+
+        document.getElementById("deleteGroupButton").addEventListener("click", () => {
+            const selectedGroup = document.getElementById("deleteGroupSelect").value;
+            if (selectedGroup) {
+                const confirmation = confirm(`Sind Sie sicher, dass Sie alle Karten der Gruppe "${selectedGroup}" löschen möchten?`);
+                if (confirmation) {
+                    deleteCardsByGroup(selectedGroup);
+                }
             } else {
-                alert("Bitte wählen Sie eine Datei aus.");
+                alert("Bitte wählen Sie eine Gruppe aus.");
             }
         });
+
 
     </script>
 </body>

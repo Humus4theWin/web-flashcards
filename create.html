@@ -109,6 +109,28 @@
         .input-group button:hover {
             background-color: #0056b3;
         }
+        button#saveButton {
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-top: 20px;
+        transition: background-color 0.3s, transform 0.2s;
+    }
+
+    button#saveButton:hover {
+        background-color: #0056b3;
+        transform: scale(1.05);
+    }
+
+    button#saveButton:active {
+        background-color: #004080;
+        transform: scale(1);
+    }
     </style>
 </head>
 
@@ -116,10 +138,18 @@
     <header>
         <nav>
             <a href="/index.html">Learn</a>
-            <a href="/upload.html" class="active">Upload</a>
+            <a href="/create.html" class="active">Create</a>
             <a href="/cards.html">Cards</a>
         </nav>
     </header>
+
+    <div>
+        <h2>Card deck</h2>
+        <div class="input-group">
+            <input type="text" id="groupInput" placeholder="Enter group name">
+        </div>
+        <div class="chips-container" id="chipsContainer"></div>
+    </div>
 
     <div>
         <h2>Question</h2>
@@ -134,16 +164,6 @@
             <p>Add image 2</p>
         </div>
     </div>
-
-    <div>
-        <h2>Card deck</h2>
-        <div class="input-group">
-            <input type="text" id="groupInput" placeholder="Enter group name">
-        </div>
-        <div class="chips-container" id="chipsContainer"></div>
-    </div>
-
-
 
     <button id="saveButton">Save</button>
 
@@ -206,6 +226,15 @@
         function setupDropZone(dropZoneId, key) {
             const dropZone = document.getElementById(dropZoneId);
 
+            // Create a hidden file input element
+            const fileInput = document.createElement("input");
+            fileInput.type = "file";
+            fileInput.accept = "image/*";
+            fileInput.style.display = "none";
+
+            // Add file input to the drop zone element
+            dropZone.appendChild(fileInput);
+
             dropZone.addEventListener("dragover", (event) => {
                 event.preventDefault();
                 dropZone.classList.add("hover");
@@ -231,7 +260,26 @@
                     alert("Bitte nur Bilddateien hochladen!");
                 }
             });
+
+            dropZone.addEventListener("click", () => {
+                fileInput.click(); // Trigger file input click
+            });
+
+            fileInput.addEventListener("change", () => {
+                const file = fileInput.files[0];
+                if (file && file.type.startsWith("image/")) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        dropZone.innerHTML = `<img src="${reader.result}" alt="Hochgeladenes Bild">`;
+                        images[key] = reader.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert("Bitte nur Bilddateien hochladen!");
+                }
+            });
         }
+
 
         function addGroup(name) {
             if (!groups.includes(name)) {
