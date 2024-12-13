@@ -133,6 +133,7 @@
         }
 
         footer {
+            margin-top: auto;
             font-size: 12px;
             text-align: center;
             width: 100%;
@@ -175,6 +176,14 @@
             transition: transform 0.2s, border-color 0.3s;
         }
 
+        .styled-line {
+            border: none;
+            border-top: 2px solid #acacac;
+            margin: 20px 0;
+            align-self: center;
+        }
+
+
         img:hover {
             transform: scale(1.01);
             border-color: #007BFF;
@@ -189,6 +198,7 @@
             <a href="/create.html">Create</a>
             <a href="/cards.html">Cards</a>
         </nav>
+        <hr class="styled-line">
     </header>
     <div>
         <label for="groupSelect">Select Group:</label>
@@ -374,6 +384,7 @@
     </script>
 </body>
 <footer>
+    <hr class="styled-line">
     <form action="https://www.paypal.com/donate" method="post" target="_top">
         <input type="hidden" name="hosted_button_id" value="V2QVTT6TSDWYC" />
         <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit"
