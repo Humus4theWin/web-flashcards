@@ -12,7 +12,7 @@ Die Idee hinter der App war es, eine einfache Möglichkeit zu bieten, Karteikart
 enthält.
 
 ## Verwendung
-1. **Starten der App:** Öffne die App im Browser über die bereitgestellte `index.html` oder [Hier: web-flashcards.com/](https://web-flashcards.com/cards.html)
+1. **Starten der App:** Öffne die App im Browser über die bereitgestellte `index.html` oder [Hier: web-flashcards.com/](https://web-flashcards.com/index.html)
 2. **Karten erstellen:** Navigiere zum Reiter "Create" und füge dort neue Karteikarten hinzu.
 3. **Lernen:** Wechsel zurück zu "Learn" und beginne, die erstellten Karten zu nutzen.
 
@@ -24,7 +24,6 @@ Das Ziel war es, in kürzester Zeit eine minimal funktionsfähige Version zu ent
 
 ## Geplante Verbesserungen
 - **Responsive Design**: Optimierung für mobile Geräte.
-- **Export/Import-Funktion:** Ermöglicht das Teilen von Kartendecks.
 - **Fortschrittsanzeige:** Zeigt an, wie viele Karten korrekt beantwortet wurden.
 - **Cloud-Speicherung:** Synchronisation der Daten über Geräte hinweg.
 - **Karten-Algorithmus:** Verbesserte Auswahl der nächten Karte basierend auf Lernfortschritt.
