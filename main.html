@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
+            padding: 5px 10px;
+        }
+
+        nav a.active {
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+        }
+
+        nav a:hover {
+            background-color: #ddd;
+            border-radius: 5px;
+        }
+
+        nav a:hover {
+            background-color: #ddd;
+            border-radius: 5px;
+        }
+
+        #card {
+            width: 80vw;
+            height: 60vh;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .flip-card {
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.8s;
+        }
+
+        .flip-card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front,
+        .card-back {
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .card-front img,
+        .card-back img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .card-back {
+            transform: rotateY(180deg);
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        footer {
+            font-size: 10px;
+            text-align: center;
+            width: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="/main.html" class="active">Cards</a>
+            <a href="/upload.html">Upload</a>
+        </nav>
+    </header>
+
+    <div id="card">
+        <div class="flip-card" id="flipCard">
+            <div class="card-front" id="cardFront"></div>
+            <div class="card-back" id="cardBack"></div>
+        </div>
+    </div>
+    <div>
+        <button id="easyButton">Leicht</button>
+        <button id="mediumButton">Mittel</button>
+        <button id="hardButton">Schwer</button>
+    </div>
+
+    <script>
+        if (!window.indexedDB) {
+            alert("IndexedDB wird in Ihrem Browser nicht unterstützt. Einige Funktionen werden nicht verfügbar sein.");
+        }
+
+        const dbRequest = indexedDB.open("ImageDatabase", 1);
+        let db;
+        let currentCardId = null;
+
+        dbRequest.onsuccess = (event) => {
+            db = event.target.result;
+            loadNextCard();
+        };
+
+        dbRequest.onerror = (event) => {
+            console.error("Fehler beim Öffnen der IndexedDB:", event.target.error);
+        };
+
+        function getEntryById(storeName, id, callback) {
+            const transaction = db.transaction(storeName, "readonly");
+            const store = transaction.objectStore(storeName);
+            const request = store.get(id);
+
+            request.onsuccess = () => {
+                callback(request.result);
+            };
+
+            request.onerror = (event) => {
+                console.error(`Fehler beim Abrufen der Daten aus ${storeName}:`, event.target.error);
+            };
+        }
+
+        function getCardWithLowestPassed(callback) {
+            const transaction = db.transaction("Metadata", "readonly");
+            const store = transaction.objectStore("Metadata");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const entries = request.result;
+                if (entries.length > 0) {
+                    const lowestPassedCard = entries.reduce((min, entry) => entry.passed < min.passed ? entry : min, entries[0]);
+                    callback(lowestPassedCard);
+                }
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
+            };
+        }
+
+        function loadNextCard() {
+            getCardWithLowestPassed((metadata) => {
+                currentCardId = metadata.id;
+                getEntryById("Frage", metadata.id, (frage) => {
+                    document.getElementById("cardFront").innerHTML = `<img src="${frage.image}" alt="Frage">`;
+                });
+                getEntryById("Antwort", metadata.id, (antwort) => {
+                    if (antwort) {
+                        document.getElementById("cardBack").innerHTML = `<img src="${antwort.image}" alt="Antwort">`;
+                    } else {
+                        document.getElementById("cardBack").innerHTML = "<p>Keine Antwort gefunden</p>";
+                    }
+                });
+            });
+        }
+
+        document.getElementById("card").addEventListener("click", () => {
+            const flipCard = document.getElementById("flipCard");
+            flipCard.classList.toggle("flipped");
+        });
+
+        function updateMetadata(difficulty) {
+            const transaction = db.transaction("Metadata", "readwrite");
+            const store = transaction.objectStore("Metadata");
+            const request = store.get(currentCardId);
+
+            request.onsuccess = () => {
+                const metadata = request.result;
+                if (metadata) {
+                    metadata.views += 1;
+                    metadata.passed = (metadata.passed + difficulty) / 2;
+                    store.put(metadata);
+                }
+                loadNextCard();
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Aktualisieren der Metadaten:", event.target.error);
+            };
+        }
+
+        document.getElementById("easyButton").addEventListener("click", () => updateMetadata(3));
+        document.getElementById("mediumButton").addEventListener("click", () => updateMetadata(2));
+        document.getElementById("hardButton").addEventListener("click", () => updateMetadata(1));
+    </script>
+</body>
+<footer>
+    <p>Linus Pfoch</p>
+    <p>Lindenstr. 14, 16548 Glienicke</p>
+    <p>linus.pfoch@softcompare.de</p>
+
+</html>

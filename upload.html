@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag-and-Drop Bild-Upload</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: #333;
+            font-size: 18px;
+            padding: 5px 10px;
+        }
+
+        nav a.active {
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+        }
+
+        nav a:hover {
+            background-color: #ddd;
+            border-radius: 5px;
+        }
+
+        .drop-zone {
+            width: 300px;
+            height: 200px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px;
+            position: relative;
+        }
+
+        .drop-zone.hover {
+            border-color: #333;
+            background-color: #f8f8f8;
+        }
+
+        .drop-zone img {
+            max-width: 100%;
+            max-height: 100%;
+            position: absolute;
+        }
+
+        .drop-zone p {
+            position: absolute;
+            font-size: 16px;
+            color: #999;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="/main.html">Cards</a>
+            <a href="/upload.html" class="active">Upload</a>
+        </nav>
+    </header>
+
+    <div>
+        <h2>Frage</h2>
+        <div id="dropZone1" class="drop-zone">
+            <p>Bild 1 hierhin ziehen</p>
+        </div>
+    </div>
+
+    <div>
+        <h2>Antwort</h2>
+        <div id="dropZone2" class="drop-zone">
+            <p>Bild 2 hierhin ziehen</p>
+        </div>
+    </div>
+
+    <button id="saveButton">Speichern</button>
+
+    <script>
+        if (!window.indexedDB) {
+            alert("IndexedDB wird in Ihrem Browser nicht unterstützt. Einige Funktionen werden nicht verfügbar sein.");
+        }
+
+        const dbRequest = indexedDB.open("ImageDatabase", 1);
+        let db;
+        let images = { Frage: null, Antwort: null };
+
+        dbRequest.onupgradeneeded = (event) => {
+            db = event.target.result;
+            if (!db.objectStoreNames.contains("Frage")) {
+                db.createObjectStore("Frage", { keyPath: "id" });
+            }
+            if (!db.objectStoreNames.contains("Antwort")) {
+                db.createObjectStore("Antwort", { keyPath: "id" });
+            }
+            if (!db.objectStoreNames.contains("Metadata")) {
+                db.createObjectStore("Metadata", { keyPath: "id" });
+            }
+        };
+
+        dbRequest.onsuccess = (event) => {
+            db = event.target.result;
+        };
+
+        dbRequest.onerror = (event) => {
+            console.error("Fehler beim Öffnen der IndexedDB:", event.target.error);
+        };
+
+        function generateRandomId() {
+            return '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function saveToIndexedDB(storeName, data) {
+            const transaction = db.transaction(storeName, "readwrite");
+            const store = transaction.objectStore(storeName);
+            store.add(data);
+
+            transaction.oncomplete = () => {
+                console.log(`${storeName}-Daten erfolgreich gespeichert.`);
+            };
+
+            transaction.onerror = (event) => {
+                console.error(`Fehler beim Speichern in ${storeName}:`, event.target.error);
+            };
+        }
+
+        function setupDropZone(dropZoneId, key) {
+            const dropZone = document.getElementById(dropZoneId);
+
+            dropZone.addEventListener("dragover", (event) => {
+                event.preventDefault();
+                dropZone.classList.add("hover");
+            });
+
+            dropZone.addEventListener("dragleave", () => {
+                dropZone.classList.remove("hover");
+            });
+
+            dropZone.addEventListener("drop", (event) => {
+                event.preventDefault();
+                dropZone.classList.remove("hover");
+
+                const file = event.dataTransfer.files[0];
+                if (file && file.type.startsWith("image/")) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        dropZone.innerHTML = `<img src="${reader.result}" alt="Hochgeladenes Bild">`;
+                        images[key] = reader.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert("Bitte nur Bilddateien hochladen!");
+                }
+            });
+        }
+
+        document.getElementById("saveButton").addEventListener("click", () => {
+            if (images.Frage && images.Antwort) {
+                const id = generateRandomId();
+                const metadata = {
+                    id: id,
+                    createdAt: new Date().toISOString(),
+                    views: 0,
+                    passed: 0
+                };
+
+                saveToIndexedDB("Frage", { id: id, image: images.Frage });
+                saveToIndexedDB("Antwort", { id: id, image: images.Antwort });
+                saveToIndexedDB("Metadata", metadata);
+
+                images = { Frage: null, Antwort: null };
+                document.getElementById("dropZone1").innerHTML = '<p>Bild 1 hierhin ziehen</p>';
+                document.getElementById("dropZone2").innerHTML = '<p>Bild 2 hierhin ziehen</p>';
+            } else {
+                alert("Bitte beide Bilder hochladen, bevor Sie speichern.");
+            }
+        });
+
+        setupDropZone("dropZone1", "Frage");
+        setupDropZone("dropZone2", "Antwort");
+    </script>
+</body>
+
+</html>
