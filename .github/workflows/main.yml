@@ -1,0 +1,31 @@
+name: Deploy Static HTML via FTP
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Install FTP Client
+        run: sudo apt-get update && sudo apt-get install -y ftp
+
+      - name: Upload Repository Content to FTP Server
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          ftp -inv $FTP_SERVER <<EOF
+          user $FTP_USERNAME $FTP_PASSWORD
+          cd /path/to/your/destination
+          mdelete *
+          mput *
+          bye
+          EOF
