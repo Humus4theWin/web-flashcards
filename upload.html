@@ -135,12 +135,15 @@
         </div>
     </div>
 
-    <h2>Card deck</h2>
-    <div class="input-group">
-        <input type="text" id="groupInput" placeholder="Enter group name">
+    <div>
+        <h2>Card deck</h2>
+        <div class="input-group">
+            <input type="text" id="groupInput" placeholder="Enter group name">
+        </div>
+        <div class="chips-container" id="chipsContainer"></div>
     </div>
 
-    <div class="chips-container" id="chipsContainer"></div>
+
 
     <button id="saveButton">Save</button>
 
@@ -273,7 +276,7 @@
         }
 
 
-   
+
 
         document.getElementById("saveButton").addEventListener("click", () => {
             const groupName = document.getElementById("groupInput").value.trim();
@@ -307,4 +310,3 @@
 </body>
 
 </html>
-
