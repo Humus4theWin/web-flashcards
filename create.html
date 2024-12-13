@@ -164,15 +164,16 @@
         }
 
         .card-deck-container {
-            width: 400px;
+            max-width: 800px;
             box-sizing: border-box;
         }
+
         .styled-line {
-        border: none;
-        border-top: 2px solid #acacac;
-        margin: 20px 0;
-        align-self: center;
-    }
+            border: none;
+            border-top: 2px solid #acacac;
+            margin: 20px 0;
+            align-self: center;
+        }
 
         footer {
             margin-top: auto;
@@ -182,7 +183,18 @@
             margin-top: 20px;
             color: #555;
         }
-  
+
+        .qa-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            /* Space between Question and Answer */
+            justify-content: center;
+            /* Center horizontally */
+            align-items: flex-start;
+            /* Align items at the top */
+            margin: 20px 0;
+        }
     </style>
 
 </head>
@@ -205,17 +217,18 @@
         <div class="chips-container" id="chipsContainer"></div>
     </div>
 
-    <div>
-        <h2>Question</h2>
-        <div id="dropZone1" class="drop-zone">
-            <p>Add image 1</p>
+    <div class="qa-container">
+        <div>
+            <h2>Question</h2>
+            <div id="dropZone1" class="drop-zone">
+                <p>Add image 1</p>
+            </div>
         </div>
-    </div>
-
-    <div>
-        <h2>Answer</h2>
-        <div id="dropZone2" class="drop-zone">
-            <p>Add image 2</p>
+        <div>
+            <h2>Answer</h2>
+            <div id="dropZone2" class="drop-zone">
+                <p>Add image 2</p>
+            </div>
         </div>
     </div>
 
@@ -423,4 +436,5 @@
     <p>Lindenstr. 14, 16548 Glienicke DE</p>
     <p>info@web-flashcards.com</p>
 </footer>
+
 </html>
