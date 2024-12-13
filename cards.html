@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,9 +13,11 @@
             align-items: center;
             padding: 20px;
         }
-        header{
+
+        header {
             margin-bottom: 15px;
         }
+
         nav a {
             text-decoration: none;
             color: #333;
@@ -38,19 +41,24 @@
             border-collapse: collapse;
             margin-top: 20px;
         }
-        th, td {
+
+        th,
+        td {
             border: 1px solid #ddd;
             padding: 8px;
             text-align: center;
         }
+
         th {
             background-color: #f4f4f4;
         }
+
         img {
             max-width: 150px;
             max-height: 100px;
             cursor: pointer;
         }
+
         button {
             padding: 5px 10px;
             font-size: 14px;
@@ -60,9 +68,11 @@
             border-radius: 3px;
             cursor: pointer;
         }
+
         button:hover {
             background-color: #e60000;
         }
+
         .fullscreen {
             position: fixed;
             top: 0;
@@ -75,20 +85,63 @@
             align-items: center;
             z-index: 1000;
         }
+
         .fullscreen img {
             max-width: 90%;
             max-height: 90%;
         }
+
+        .import-export-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .import-export-container div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .import-export-container label {
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .import-export-container button,
+        .import-export-container select,
+        .import-export-container input {
+            margin-top: 5px;
+        }
     </style>
 </head>
+
 <body>
     <header>
         <nav>
             <a href="/index.html">Learn</a>
-            <a href="/upload.html" >Upload</a>
+            <a href="/upload.html">Upload</a>
             <a href="/cards.html" class="active">Cards</a>
         </nav>
     </header>
+
+    <h1>Export / import cards</h1>
+    <div class="import-export-container">
+        <div>
+            <label for="exportGroupSelect">Export Group:</label>
+            <select id="exportGroupSelect">
+                <option value="all" selected>All</option>
+            </select>
+            <button id="exportButton">Export</button>
+        </div>
+        <div>
+            <label for="importFile">Import Flashcards:</label>
+            <input type="file" id="importFile" accept="application/json">
+            <button id="importButton">Import</button>
+        </div>
+    </div>
+
     <h1>List of all cards</h1>
     <table>
         <thead>
@@ -118,6 +171,7 @@
 
         dbRequest.onsuccess = (event) => {
             db = event.target.result;
+            populateExportGroupSelect();
             loadAllCards();
         };
 
@@ -217,6 +271,167 @@
         document.getElementById("fullscreenViewer").addEventListener("click", () => {
             document.getElementById("fullscreenViewer").style.display = "none";
         });
+
+
+        // Export
+        function populateExportGroupSelect() {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
+            const transaction = db.transaction("Metadata", "readonly");
+            const store = transaction.objectStore("Metadata");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const groups = new Set(
+                    request.result
+                        .map(metadata => metadata.group)
+                        .filter(group => group !== undefined && group !== null && group.trim() !== "")
+                );
+                const exportGroupSelect = document.getElementById("exportGroupSelect");
+                exportGroupSelect.innerHTML = '<option value="all" selected>All</option>'; // Add default "All"
+                groups.forEach(group => {
+                    const option = document.createElement("option");
+                    option.value = group;
+                    option.textContent = group;
+                    exportGroupSelect.appendChild(option);
+                });
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Gruppen:", event.target.error);
+            };
+        }
+
+        function exportGroupToJSON(selectedGroup) {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
+            const transaction = db.transaction(["Frage", "Antwort", "Metadata"], "readonly");
+            const frageStore = transaction.objectStore("Frage");
+            const antwortStore = transaction.objectStore("Antwort");
+            const metadataStore = transaction.objectStore("Metadata");
+            const request = metadataStore.getAll();
+
+            request.onsuccess = () => {
+                const metadataList = request.result;
+                let filteredList = metadataList;
+                if (selectedGroup !== "all") {
+                    filteredList = metadataList.filter(metadata => metadata.group === selectedGroup);
+                }
+
+                const exportData = [];
+                const promises = filteredList.map(metadata => {
+                    return new Promise(resolve => {
+                        const frageRequest = frageStore.get(metadata.id);
+                        const antwortRequest = antwortStore.get(metadata.id);
+
+                        frageRequest.onsuccess = () => {
+                            antwortRequest.onsuccess = () => {
+                                exportData.push({
+                                    id: metadata.id,
+                                    group: metadata.group,
+                                    views: metadata.views,
+                                    passed: metadata.passed,
+                                    frage: frageRequest.result ? frageRequest.result.image : null,
+                                    antwort: antwortRequest.result ? antwortRequest.result.image : null
+                                });
+                                resolve();
+                            };
+                        };
+                    });
+                });
+
+                Promise.all(promises).then(() => {
+                    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `export_${selectedGroup}.json`;
+                    link.click();
+                });
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
+            };
+        }
+
+        document.getElementById("exportButton").addEventListener("click", () => {
+            const selectedGroup = document.getElementById("exportGroupSelect").value;
+            exportGroupToJSON(selectedGroup);
+        });
+
+
+        // Import
+        function importFlashcardsFromJSON(file) {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+
+                    const transaction = db.transaction(["Frage", "Antwort", "Metadata"], "readwrite");
+                    const frageStore = transaction.objectStore("Frage");
+                    const antwortStore = transaction.objectStore("Antwort");
+                    const metadataStore = transaction.objectStore("Metadata");
+
+                    data.forEach(card => {
+                        if (card.id && card.group && card.frage && card.antwort) {
+                            frageStore.put({ id: card.id, image: card.frage });
+                            antwortStore.put({ id: card.id, image: card.antwort });
+                            metadataStore.put({
+                                id: card.id,
+                                group: card.group,
+                                views: card.views || 0,
+                                passed: card.passed || 0
+                            });
+                        } else {
+                            console.warn("Ungültige Karte übersprungen:", card);
+                        }
+                    });
+
+                    transaction.oncomplete = () => {
+                        alert("Import erfolgreich abgeschlossen!");
+                        loadAllCards(); // Refresh the list of cards
+                    };
+
+                    transaction.onerror = (event) => {
+                        console.error("Fehler beim Importieren der Karten:", event.target.error);
+                    };
+                } catch (error) {
+                    console.error("Ungültige JSON-Datei:", error);
+                    alert("Fehler: Ungültige JSON-Datei.");
+                }
+            };
+
+            reader.onerror = () => {
+                console.error("Fehler beim Lesen der Datei:", reader.error);
+                alert("Fehler beim Lesen der Datei.");
+            };
+
+            reader.readAsText(file);
+        }
+
+        document.getElementById("importButton").addEventListener("click", () => {
+            const fileInput = document.getElementById("importFile");
+            const file = fileInput.files[0];
+            if (file) {
+                importFlashcardsFromJSON(file);
+            } else {
+                alert("Bitte wählen Sie eine Datei aus.");
+            }
+        });
+
     </script>
 </body>
+
 </html>
