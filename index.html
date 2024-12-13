@@ -5,9 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Efficient learning with flashcards - Online flashcards</title>
-    <meta name="description" content="Master your studies with our efficient and user-friendly flashcard platform. Create, organize, and learn with customizable flashcards for any topic. No login required, completely free, and perfect for students, professionals, and lifelong learners.">
-    <meta name="keywords" content="flashcards, learning, education, index cards, pictures, free, no login, study tools, online learning, study aids, educational resources, revision, active recall, spaced repetition, digital flashcards">
-    
+    <meta name="description"
+        content="Master your studies with our efficient and user-friendly flashcard platform. Create, organize, and learn with customizable flashcards for any topic. No login required, completely free, and perfect for students, professionals, and lifelong learners.">
+    <meta name="keywords"
+        content="flashcards, learning, education, index cards, pictures, free, no login, study tools, online learning, study aids, educational resources, revision, active recall, spaced repetition, digital flashcards">
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -352,12 +354,18 @@
             const selectedGroup = document.getElementById("groupSelect").value;
             getFilteredCardWithLowestPassed(selectedGroup, (metadata) => {
                 if (!metadata) {
-                    alert("Keine Karten in dieser Gruppe gefunden.");
+                    // No flashcards found, show manual image
+                    document.getElementById("cardFront").innerHTML = `<img src="/manual.jpg" alt="Manual">`;
+                    document.getElementById("cardBack").innerHTML = `<p>Flip to start creating your first flashcard!</p>`;
                     return;
                 }
                 currentCardId = metadata.id;
                 getEntryById("Frage", metadata.id, (frage) => {
-                    document.getElementById("cardFront").innerHTML = `<img src="${frage.image}" alt="Frage">`;
+                    if (frage) {
+                        document.getElementById("cardFront").innerHTML = `<img src="${frage.image}" alt="Frage">`;
+                    } else {
+                        document.getElementById("cardFront").innerHTML = `<img src="/manual.jpg" alt="Manual">`;
+                    }
                 });
                 getEntryById("Antwort", metadata.id, (antwort) => {
                     if (antwort) {
@@ -368,6 +376,7 @@
                 });
             });
         }
+
 
         document.getElementById("card").addEventListener("click", () => {
             const flipCard = document.getElementById("flipCard");
