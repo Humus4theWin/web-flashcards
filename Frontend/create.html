@@ -4,52 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <link rel="icon" type="image/x-icon" href="/image/favicon.ico">
+    <link rel="stylesheet" href="/style.css">   
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create a new flashcard</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-            background-color: #f9f9f9;
-        }
-
-        header {
-            margin-bottom: 20px;
-        }
-
-        nav {
-            display: flex;
-            gap: 15px;
-        }
-
-        nav a {
-            text-decoration: none;
-            color: #333;
-            font-size: 18px;
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-
-        nav a.active {
-            background-color: #007BFF;
-            color: white;
-        }
-
-        nav a:hover {
-            background-color: #ddd;
-        }
-
-        h2 {
-            margin-top: 20px;
-            margin-bottom: 10px;
-            font-size: 20px;
-            color: #333;
-        }
-
         .drop-zone {
             width: 400px;
             height: 200px;
@@ -62,11 +21,6 @@
             position: relative;
             background-color: white;
             transition: border-color 0.3s, background-color 0.3s;
-        }
-
-        .drop-zone.hover {
-            border-color: #007BFF;
-            background-color: #eaf4ff;
         }
 
         .drop-zone img {
@@ -170,21 +124,8 @@
             box-sizing: border-box;
         }
 
-        .styled-line {
-            border: none;
-            border-top: 2px solid #acacac;
-            margin: 20px 0;
-            align-self: center;
-        }
 
-        footer {
-            margin-top: auto;
-            font-size: 12px;
-            text-align: center;
-            width: 100%;
-            margin-top: 20px;
-            color: #555;
-        }
+
 
         .qa-container {
             display: flex;
