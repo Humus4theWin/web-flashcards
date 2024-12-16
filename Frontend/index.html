@@ -299,7 +299,7 @@
             getFilteredCardWithLowestPassed(selectedGroup, (metadata) => {
                 if (!metadata) {
                     // No flashcards found, show manual image and placeholder
-                    document.getElementById("cardFront").innerHTML = `<img src="/image/manual.jpg" alt="Manual" style="width:100%; height:auto;">`;
+                    document.getElementById("cardFront").innerHTML = `<img src="image/manual.jpg" alt="Manual" style="width:100%; height:auto;">`;
                     document.getElementById("cardBack").innerHTML = `<p>Flip to start creating your first flashcard!</p>`;
                     return;
                 }
