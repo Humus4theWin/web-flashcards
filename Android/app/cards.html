@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/image/favicon.ico">
+    <link rel="stylesheet" href="/style.css">   
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage your card decks</title>
+
+</head>
+<style>
+
+    .tool-sections {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        justify-content: flex-start;
+        margin-bottom: 30px;
+        width: 100%;
+    }
+
+    .tool-section {
+        flex: 1 1 300px;
+        min-width: 250px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #ffffff;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .tool-section h2 {
+        margin-top: 0;
+        font-size: 18px;
+    }
+
+    label {
+        display: block;
+        margin: 10px 0 5px;
+        font-size: 14px;
+    }
+
+    select,
+    button {
+        margin-top: 5px;
+        padding: 8px 15px;
+        font-size: 14px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    button {
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        transition: background-color 0.3s;
+    }
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    button.red {
+        background-color: #ff4d4d;
+    }
+
+    button.red:hover {
+        background-color: #e60000;
+    }
+
+    .drop-zone {
+        width: 100%;
+        height: 120px;
+        border: 2px dashed #ccc;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        margin-top: 10px;
+        background-color: white;
+        transition: border-color 0.3s, background-color 0.3s;
+    }
+
+    .drop-zone.hover {
+        border-color: #007BFF;
+        background-color: #eaf4ff;
+    }
+
+    .drop-zone p {
+        font-size: 14px;
+        color: #666;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        background-color: white;
+    }
+
+    th,
+    td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+    }
+
+    th {
+        background-color: #f4f4f4;
+        font-size: 16px;
+    }
+
+    td {
+        font-size: 14px;
+    }
+
+    img {
+        max-width: 150px;
+        max-height: 100px;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: transform 0.2s;
+    }
+
+    img:hover {
+        transform: scale(1.05);
+    }
+
+    .fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .fullscreen img {
+        max-width: 90%;
+        max-height: 90%;
+    }
+
+
+</style>
+
+<body>
+    <header>
+        <nav>
+            <a href="/index.html">Learn</a>
+            <a href="/create.html">Create</a>
+            <a href="/cards.html" class="active">Cards</a>
+        </nav>
+        <hr class="styled-line">
+    </header>
+
+
+
+    <h1>Tools</h1>
+    <div class="tool-sections">
+        <div class="tool-section">
+            <h2>Export Cards</h2>
+            <label for="exportGroupSelect">Export Deck:</label>
+            <select id="exportGroupSelect">
+                <option value="all" selected>All</option>
+            </select>
+            <button id="exportButton">Export</button>
+        </div>
+        <div class="tool-section">
+            <h2>Import Cards</h2>
+            <div id="importDropZone" class="drop-zone">
+                <p>Drag and drop a JSON file here or click to select a file</p>
+            </div>
+            <label for="overrideCheckbox">
+                <input type="checkbox" id="overrideCheckbox" checked>
+                Clean import (delete views & score)
+            </label>
+        </div>
+        <div class="tool-section">
+            <h2>Delete Decks</h2>
+            <label for="deleteGroupSelect">Select Deck to Delete:</label>
+            <select id="deleteGroupSelect">
+                <option value="" selected disabled>Select Deck</option>
+            </select>
+            <button class="red" id="deleteGroupButton">Delete Deck</button>
+        </div>
+    </div>
+
+
+    <h1>List of all cards</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Question</th>
+                <th>Answer</th>
+                <th>Deck</th>
+                <th>Views</th>
+                <th>Score</th>
+                <th>Delete</th>
+            </tr>
+        </thead>
+        <tbody id="cardList"></tbody>
+    </table>
+
+    <div id="fullscreenViewer" class="fullscreen" style="display: none;">
+        <img id="fullscreenImage" src="" alt="Vollbildansicht">
+    </div>
+
+    <script>
+        const dbRequest = indexedDB.open("ImageDatabase", 1);
+        let db;
+        let images = { Frage: null, Antwort: null };
+        let groups = [];
+
+        dbRequest.onupgradeneeded = (event) => {
+            db = event.target.result;
+            const objectStoreNames = Array.from(db.objectStoreNames);
+            if (!objectStoreNames.includes("Frage")) {
+                db.createObjectStore("Frage", { keyPath: "id" });
+            }
+            if (!objectStoreNames.includes("Antwort")) {
+                db.createObjectStore("Antwort", { keyPath: "id" });
+            }
+            if (!objectStoreNames.includes("Metadata")) {
+                db.createObjectStore("Metadata", { keyPath: "id" });
+            }
+        };
+
+
+        dbRequest.onsuccess = (event) => {
+            db = event.target.result;
+            populateGroupSelects();
+            loadAllCards();
+        };
+
+        dbRequest.onerror = (event) => {
+            console.error("Fehler beim Öffnen der IndexedDB:", event.target.error);
+        };
+
+        function loadAllCards() {
+            const transaction = db.transaction(["Frage", "Antwort", "Metadata"], "readonly");
+            const frageStore = transaction.objectStore("Frage");
+            const antwortStore = transaction.objectStore("Antwort");
+            const metadataStore = transaction.objectStore("Metadata");
+
+            const metadataRequest = metadataStore.getAll();
+            metadataRequest.onsuccess = () => {
+                const metadataList = metadataRequest.result;
+                metadataList.sort((a, b) => a.passed - b.passed);
+
+                const tableBody = document.getElementById("cardList");
+                tableBody.innerHTML = "";
+
+                metadataList.forEach((metadata) => {
+                    const frageRequest = frageStore.get(metadata.id);
+                    const antwortRequest = antwortStore.get(metadata.id);
+
+                    frageRequest.onsuccess = () => {
+                        antwortRequest.onsuccess = () => {
+                            const frage = frageRequest.result;
+                            const antwort = antwortRequest.result;
+
+                            const row = document.createElement("tr");
+
+                            const frageCell = document.createElement("td");
+                            frageCell.innerHTML = frage ? `<img src="${frage.image}" alt="Frage" onclick="showFullscreen('${frage.image}')">` : "Keine Frage gefunden";
+                            row.appendChild(frageCell);
+
+                            const antwortCell = document.createElement("td");
+                            antwortCell.innerHTML = antwort ? `<img src="${antwort.image}" alt="Antwort" onclick="showFullscreen('${antwort.image}')">` : "Keine Antwort gefunden";
+                            row.appendChild(antwortCell);
+
+                            const group = document.createElement("td");
+                            group.textContent = metadata.group;
+                            row.appendChild(group);
+
+                            const viewsCell = document.createElement("td");
+                            viewsCell.textContent = metadata.views;
+                            row.appendChild(viewsCell);
+
+                            const passedCell = document.createElement("td");
+                            passedCell.textContent = metadata.passed.toFixed(2);
+                            row.appendChild(passedCell);
+
+                            const actionCell = document.createElement("td");
+                            const deleteButton = document.createElement("button");
+                            deleteButton.textContent = "🗑";
+                            deleteButton.addEventListener("click", () => deleteCard(metadata.id));
+                            actionCell.appendChild(deleteButton);
+                            row.appendChild(actionCell);
+
+                            tableBody.appendChild(row);
+                        };
+                    };
+                });
+            };
+
+            metadataRequest.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
+            };
+        }
+
+        function deleteCard(id) {
+            const transaction = db.transaction(["Frage", "Antwort", "Metadata"], "readwrite");
+            const frageStore = transaction.objectStore("Frage");
+            const antwortStore = transaction.objectStore("Antwort");
+            const metadataStore = transaction.objectStore("Metadata");
+
+            frageStore.delete(id);
+            antwortStore.delete(id);
+            metadataStore.delete(id);
+
+            transaction.oncomplete = () => {
+                loadAllCards();
+            };
+
+            transaction.onerror = (event) => {
+                console.error("Fehler beim Löschen der Karte:", event.target.error);
+            };
+        }
+
+        function showFullscreen(imageSrc) {
+            const fullscreenViewer = document.getElementById("fullscreenViewer");
+            const fullscreenImage = document.getElementById("fullscreenImage");
+            fullscreenImage.src = imageSrc;
+            fullscreenViewer.style.display = "flex";
+        }
+
+        document.getElementById("fullscreenViewer").addEventListener("click", () => {
+            document.getElementById("fullscreenViewer").style.display = "none";
+        });
+
+
+        // Export
+        function populateGroupSelects() {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
+            const transaction = db.transaction("Metadata", "readonly");
+            const store = transaction.objectStore("Metadata");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const groups = new Set(
+                    request.result
+                        .map(metadata => metadata.group)
+                        .filter(group => group !== undefined && group !== null && group.trim() !== "")
+                );
+
+                // Populate EXPORT group select
+                const exportGroupSelect = document.getElementById("exportGroupSelect");
+                exportGroupSelect.innerHTML = '<option value="all" selected>All</option>'; // Add default "All"
+                groups.forEach(group => {
+                    const option = document.createElement("option");
+                    option.value = group;
+                    option.textContent = group;
+                    exportGroupSelect.appendChild(option);
+                });
+
+                // Populate DELETE group select
+                const deleteGroupSelect = document.getElementById("deleteGroupSelect");
+                deleteGroupSelect.innerHTML = '<option value="" disabled selected>Select Deck</option>'; // Reset dropdown
+                groups.forEach(group => {
+                    const option = document.createElement("option");
+                    option.value = group;
+                    option.textContent = group;
+                    deleteGroupSelect.appendChild(option);
+                });
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Gruppen:", event.target.error);
+            };
+        }
+
+
+        function exportGroupToJSON(selectedGroup) {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
+            const transaction = db.transaction(["Frage", "Antwort", "Metadata"], "readonly");
+            const frageStore = transaction.objectStore("Frage");
+            const antwortStore = transaction.objectStore("Antwort");
+            const metadataStore = transaction.objectStore("Metadata");
+            const request = metadataStore.getAll();
+
+            request.onsuccess = () => {
+                const metadataList = request.result;
+                let filteredList = metadataList;
+                if (selectedGroup !== "all") {
+                    filteredList = metadataList.filter(metadata => metadata.group === selectedGroup);
+                }
+
+                const exportData = [];
+                const promises = filteredList.map(metadata => {
+                    return new Promise(resolve => {
+                        const frageRequest = frageStore.get(metadata.id);
+                        const antwortRequest = antwortStore.get(metadata.id);
+
+                        frageRequest.onsuccess = () => {
+                            antwortRequest.onsuccess = () => {
+                                exportData.push({
+                                    id: metadata.id,
+                                    group: metadata.group,
+                                    views: metadata.views,
+                                    passed: metadata.passed,
+                                    frage: frageRequest.result ? frageRequest.result.image : null,
+                                    antwort: antwortRequest.result ? antwortRequest.result.image : null
+                                });
+                                resolve();
+                            };
+                        };
+                    });
+                });
+
+                Promise.all(promises).then(() => {
+                    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+                    const link = document.createElement("a");
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `export_${selectedGroup}.json`;
+                    link.click();
+                });
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
+            };
+        }
+
+        document.getElementById("exportButton").addEventListener("click", () => {
+            const selectedGroup = document.getElementById("exportGroupSelect").value;
+            exportGroupToJSON(selectedGroup);
+        });
+
+
+        // Import
+        function setupDropZone(dropZoneId) {
+            const dropZone = document.getElementById(dropZoneId);
+
+            dropZone.addEventListener("dragover", (event) => {
+                event.preventDefault();
+                dropZone.classList.add("hover");
+            });
+
+            dropZone.addEventListener("dragleave", () => {
+                dropZone.classList.remove("hover");
+            });
+
+            dropZone.addEventListener("drop", (event) => {
+                event.preventDefault();
+                dropZone.classList.remove("hover");
+
+                const file = event.dataTransfer.files[0];
+                if (file && file.type === "application/json") {
+                    importFlashcardsFromFile(file);
+                } else {
+                    alert("Bitte nur gültige JSON-Dateien hochladen!");
+                }
+            });
+
+            dropZone.addEventListener("click", () => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = "application/json";
+                input.style.display = "none";
+
+                input.addEventListener("change", () => {
+                    const file = input.files[0];
+                    if (file && file.type === "application/json") {
+                        importFlashcardsFromFile(file);
+                    } else {
+                        alert("Bitte nur gültige JSON-Dateien hochladen!");
+                    }
+                });
+
+                input.click();
+            });
+        }
+
+        function importFlashcardsFromFile(file) {
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    const override = document.getElementById("overrideCheckbox").checked; // Check if override is selected
+                    const transaction = db.transaction(["Frage", "Antwort", "Metadata"], "readwrite");
+                    const frageStore = transaction.objectStore("Frage");
+                    const antwortStore = transaction.objectStore("Antwort");
+                    const metadataStore = transaction.objectStore("Metadata");
+
+                    data.forEach(card => {
+                        if (card.id && card.group && card.frage && card.antwort) {
+                            frageStore.put({ id: card.id, image: card.frage });
+                            antwortStore.put({ id: card.id, image: card.antwort });
+                            metadataStore.put({
+                                id: card.id,
+                                group: card.group,
+                                views: override ? 0 : (card.views || 0), // Override if checkbox is selected
+                                passed: override ? 0 : (card.passed || 0) // Override if checkbox is selected
+                            });
+                        } else {
+                            console.warn("Ungültige Karte übersprungen:", card);
+                        }
+                    });
+
+                    transaction.oncomplete = () => {
+                        alert("Import erfolgreich abgeschlossen!");
+                        loadAllCards();
+                    };
+
+                    transaction.onerror = (event) => {
+                        console.error("Fehler beim Importieren der Karten:", event.target.error);
+                    };
+                } catch (error) {
+                    console.error("Ungültige JSON-Datei:", error);
+                    alert("Fehler: Ungültige JSON-Datei.");
+                }
+            };
+
+            reader.onerror = () => {
+                console.error("Fehler beim Lesen der Datei:", reader.error);
+                alert("Fehler beim Lesen der Datei.");
+            };
+
+            reader.readAsText(file);
+        }
+
+
+
+        setupDropZone("importDropZone");
+
+
+        // Delete Group
+        function deleteCardsByGroup(group) {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
+            const transaction = db.transaction(["Frage", "Antwort", "Metadata"], "readwrite");
+            const metadataStore = transaction.objectStore("Metadata");
+            const frageStore = transaction.objectStore("Frage");
+            const antwortStore = transaction.objectStore("Antwort");
+
+            const request = metadataStore.getAll();
+
+            request.onsuccess = () => {
+                const cardsToDelete = request.result.filter(metadata => metadata.group === group);
+
+                cardsToDelete.forEach(card => {
+                    metadataStore.delete(card.id);
+                    frageStore.delete(card.id);
+                    antwortStore.delete(card.id);
+                });
+
+                transaction.oncomplete = () => {
+                    alert(`Alle Karten der Gruppe "${group}" wurden gelöscht.`);
+                    loadAllCards(); // Refresh the list of cards
+                    populateDeleteGroupSelect(); // Refresh the group dropdown
+                };
+
+                transaction.onerror = (event) => {
+                    console.error("Fehler beim Löschen der Karten:", event.target.error);
+                };
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
+            };
+        }
+
+        document.getElementById("deleteGroupButton").addEventListener("click", () => {
+            const selectedGroup = document.getElementById("deleteGroupSelect").value;
+            if (selectedGroup) {
+                const confirmation = confirm(`Sind Sie sicher, dass Sie alle Karten der Gruppe "${selectedGroup}" löschen möchten?`);
+                if (confirmation) {
+                    deleteCardsByGroup(selectedGroup);
+                }
+            } else {
+                alert("Bitte wählen Sie eine Gruppe aus.");
+            }
+        });
+
+
+    </script>
+</body>
+
+<footer>
+    <hr class="styled-line">
+    <form action="https://www.paypal.com/donate" method="post" target="_top">
+        <input type="hidden" name="hosted_button_id" value="V2QVTT6TSDWYC" />
+        <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit"
+            title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+    </form>
+    <a href="https://github.com/Humus4theWin/web-flashcards/" target="_blank" rel="noopener noreferrer">
+        Visit GitHub Repository
+    </a>
+
+    <p>Linus Pfoch</p>
+    <p>Lindenstr. 14, 16548 Glienicke DE</p>
+    <p>info@web-flashcards.com</p>
+</footer>
+
+</html>

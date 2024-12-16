@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/image/favicon.ico">
+    <link rel="stylesheet" href="/style.css">   
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create a new flashcard</title>
+    <style>
+        .drop-zone {
+            width: 400px;
+            height: 200px;
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            position: relative;
+            background-color: white;
+            transition: border-color 0.3s, background-color 0.3s;
+        }
+
+        .drop-zone img {
+            max-width: 100%;
+            max-height: 100%;
+            position: absolute;
+            border-radius: 10px;
+        }
+
+        .drop-zone p {
+            position: absolute;
+            font-size: 16px;
+            color: #999;
+        }
+
+        .chips-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .chip {
+            padding: 5px 10px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .chip:hover {
+            background-color: #0056b3;
+        }
+
+        .input-group {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 300px;
+            width: 100%;
+        }
+
+        .input-group input {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            transition: border-color 0.3s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .input-group input:focus {
+            border-color: #007BFF;
+            outline: none;
+        }
+
+        .input-group button {
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .input-group button:hover {
+            background-color: #0056b3;
+        }
+
+        button#saveButton {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button#saveButton:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        button#saveButton:active {
+            background-color: #004080;
+            transform: scale(1);
+        }
+
+        .card-deck-container {
+            max-width: 800px;
+            box-sizing: border-box;
+        }
+
+
+
+
+        .qa-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            /* Space between Question and Answer */
+            justify-content: center;
+            /* Center horizontally */
+            align-items: flex-start;
+            /* Align items at the top */
+            margin: 20px 0;
+        }
+    </style>
+
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="/index.html">Learn</a>
+            <a href="/create.html" class="active">Create</a>
+            <a href="/cards.html">Cards</a>
+        </nav>
+        <hr class="styled-line">
+    </header>
+
+    <div class="card-deck-container">
+        <h2>Assign to Deck</h2>
+        <div class="input-group">
+            <input type="text" id="groupInput" placeholder="Enter deck name">
+        </div>
+        <div class="chips-container" id="chipsContainer"></div>
+    </div>
+
+    <div class="qa-container">
+        <div>
+            <h2>Question</h2>
+            <div id="dropZone1" class="drop-zone">
+                <p>Add image 1</p>
+            </div>
+        </div>
+        <div>
+            <h2>Answer</h2>
+            <div id="dropZone2" class="drop-zone">
+                <p>Add image 2</p>
+            </div>
+        </div>
+    </div>
+
+    <button id="saveButton">Save</button>
+
+    <script>
+        if (!window.indexedDB) {
+            alert("IndexedDB wird in Ihrem Browser nicht unterstützt. Einige Funktionen werden nicht verfügbar sein.");
+        }
+
+        const dbRequest = indexedDB.open("ImageDatabase", 1);
+        let db;
+        let images = { Frage: null, Antwort: null };
+        let groups = [];
+
+        dbRequest.onupgradeneeded = (event) => {
+            db = event.target.result;
+            const objectStoreNames = Array.from(db.objectStoreNames);
+            if (!objectStoreNames.includes("Frage")) {
+                db.createObjectStore("Frage", { keyPath: "id" });
+            }
+            if (!objectStoreNames.includes("Antwort")) {
+                db.createObjectStore("Antwort", { keyPath: "id" });
+            }
+            if (!objectStoreNames.includes("Metadata")) {
+                db.createObjectStore("Metadata", { keyPath: "id" });
+            }
+        };
+
+        dbRequest.onsuccess = (event) => {
+            db = event.target.result;
+            loadGroups();
+        };
+
+        dbRequest.onerror = (event) => {
+            console.error("Fehler beim Öffnen der IndexedDB:", event.target.error);
+        };
+
+        function generateRandomId() {
+            return '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function saveToIndexedDB(storeName, data) {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
+            const transaction = db.transaction(storeName, "readwrite");
+            const store = transaction.objectStore(storeName);
+            store.add(data);
+
+            transaction.oncomplete = () => {
+                console.log(`${storeName}-Daten erfolgreich gespeichert.`);
+            };
+
+            transaction.onerror = (event) => {
+                console.error(`Fehler beim Speichern in ${storeName}:`, event.target.error);
+            };
+        }
+
+        function setupDropZone(dropZoneId, key) {
+            const dropZone = document.getElementById(dropZoneId);
+
+            // Create a hidden file input element
+            const fileInput = document.createElement("input");
+            fileInput.type = "file";
+            fileInput.accept = "image/*";
+            fileInput.style.display = "none";
+
+            // Add file input to the drop zone element
+            dropZone.appendChild(fileInput);
+
+            dropZone.addEventListener("dragover", (event) => {
+                event.preventDefault();
+                dropZone.classList.add("hover");
+            });
+
+            dropZone.addEventListener("dragleave", () => {
+                dropZone.classList.remove("hover");
+            });
+
+            dropZone.addEventListener("drop", (event) => {
+                event.preventDefault();
+                dropZone.classList.remove("hover");
+
+                const file = event.dataTransfer.files[0];
+                if (file && file.type.startsWith("image/")) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        dropZone.innerHTML = `<img src="${reader.result}" alt="Hochgeladenes Bild">`;
+                        images[key] = reader.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert("Bitte nur Bilddateien hochladen!");
+                }
+            });
+
+            dropZone.addEventListener("click", () => {
+                fileInput.click(); // Trigger file input click
+            });
+
+            fileInput.addEventListener("change", () => {
+                const file = fileInput.files[0];
+                if (file && file.type.startsWith("image/")) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        dropZone.innerHTML = `<img src="${reader.result}" alt="Hochgeladenes Bild">`;
+                        images[key] = reader.result;
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    alert("Bitte nur Bilddateien hochladen!");
+                }
+            });
+        }
+
+
+        function addGroup(name) {
+            if (!groups.includes(name)) {
+                groups.push(name);
+                renderChips();
+            }
+        }
+
+        function renderChips() {
+            const container = document.getElementById("chipsContainer");
+            container.innerHTML = "";
+            groups.forEach(group => {
+                const chip = document.createElement("div");
+                chip.classList.add("chip");
+                chip.textContent = group;
+                chip.addEventListener("click", () => {
+                    document.getElementById("groupInput").value = group;
+                });
+                container.appendChild(chip);
+            });
+        }
+
+        function loadGroups() {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
+            const transaction = db.transaction("Metadata", "readonly");
+            const store = transaction.objectStore("Metadata");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const allGroups = request.result.map(metadata => metadata.group);
+                groups = [...new Set(allGroups)]; // Entferne doppelte Gruppennamen
+                renderChips();
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Laden der Gruppen:", event.target.error);
+            };
+        }
+
+
+
+
+        document.getElementById("saveButton").addEventListener("click", () => {
+            const groupName = document.getElementById("groupInput").value.trim();
+
+            if (!groupName) {
+                groupName = "default"; // Default group name
+            }
+
+
+            if (images.Frage && images.Antwort) {
+                addGroup(groupName);
+                const id = generateRandomId();
+                const metadata = {
+                    id: id,
+                    group: groupName,
+                    createdAt: new Date().toISOString(),
+                    views: 0,
+                    passed: 0
+                };
+
+                saveToIndexedDB("Frage", { id: id, image: images.Frage });
+                saveToIndexedDB("Antwort", { id: id, image: images.Antwort });
+                saveToIndexedDB("Metadata", metadata);
+
+                images = { Frage: null, Antwort: null };
+                document.getElementById("dropZone1").innerHTML = '<p>Bild 1 hierhin ziehen</p>';
+                document.getElementById("dropZone2").innerHTML = '<p>Bild 2 hierhin ziehen</p>';
+                //document.getElementById("groupInput").value = "";
+            } else {
+                alert("Bitte beide Bilder hochladen, bevor Sie speichern.");
+            }
+        });
+
+        setupDropZone("dropZone1", "Frage");
+        setupDropZone("dropZone2", "Antwort");
+    </script>
+</body>
+
+<footer>
+    <hr class="styled-line">
+    <form action="https://www.paypal.com/donate" method="post" target="_top">
+        <input type="hidden" name="hosted_button_id" value="V2QVTT6TSDWYC" />
+        <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit"
+            title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+    </form>
+    <a href="https://github.com/Humus4theWin/web-flashcards/" target="_blank" rel="noopener noreferrer">
+        Visit GitHub Repository
+    </a>
+
+    <p>Linus Pfoch</p>
+    <p>Lindenstr. 14, 16548 Glienicke DE</p>
+    <p>info@web-flashcards.com</p>
+</footer>
+
+</html>

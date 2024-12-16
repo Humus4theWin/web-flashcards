@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/x-icon" href="/image/favicon.ico">
+    <link rel="stylesheet" href="/style.css">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Efficient learning with flashcards - Online flashcards</title>
+    <meta name="description"
+        content="Master your studies with our efficient and user-friendly flashcard platform. Create, organize, and learn with customizable flashcards for any topic. No login required, completely free, and perfect for students, professionals, and lifelong learners.">
+    <meta name="keywords"
+        content="flashcards, learning, education, index cards, pictures, free, no login, study tools, online learning, study aids, educational resources, revision, active recall, spaced repetition, digital flashcards">
+
+    <style>
+        #card {
+            margin-top: 10px;
+            display: inline-block;
+            perspective: 1000px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            /* No fixed width/height */
+        }
+
+        .flip-card {
+            display: inline-block;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s;
+            /* The size of .flip-card will be defined by the front content */
+        }
+
+        .flip-card.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front,
+        .card-back {
+            backface-visibility: hidden;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background-color: #f9f9f9;
+        }
+
+        /* Keep the front side in normal flow, so it defines the size */
+        .card-front {
+            position: relative;
+        }
+
+        /* The back side is absolutely positioned to overlap the front */
+        .card-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: rotateY(180deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .card-front img,
+        .card-back img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+
+
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: scale(1.05);
+        }
+
+        button:active {
+            background-color: #004080;
+            transform: scale(1);
+        }
+
+        label {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        select {
+            padding: 8px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #fff;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            border-color: #007BFF;
+            outline: none;
+        }
+
+        img {
+            max-width: 100%;
+            max-height: 100%;
+            max-height: 70vh;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            /* Add a border */
+            border-radius: 5px;
+            /* Add rounded corners */
+            box-sizing: border-box;
+            /* Ensures border is included within max dimensions */
+            transition: transform 0.2s, border-color 0.3s;
+        }
+
+
+
+
+        img:hover {
+            transform: scale(1.01);
+            border-color: #007BFF;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav>
+            <a href="/index.html" class="active">Learn</a>
+            <a href="/create.html">Create</a>
+            <a href="/cards.html">Cards</a>
+        </nav>
+        <hr class="styled-line">
+    </header>
+    <div>
+        <label for="groupSelect">Select Deck:</label>
+        <select id="groupSelect">
+            <option value="all" selected>All</option>
+        </select>
+    </div>
+
+    <div id="card">
+        <div class="flip-card" id="flipCard">
+            <div class="card-front" id="cardFront"></div>
+            <div class="card-back" id="cardBack"></div>
+        </div>
+    </div>
+    <div>
+        <button id="easyButton">Easy</button>
+        <button id="mediumButton">Medium</button>
+        <button id="hardButton">Hard</button>
+    </div>
+
+
+
+
+    <script>
+        if (!window.indexedDB) {
+            alert("IndexedDB wird in Ihrem Browser nicht unterstützt. Einige Funktionen werden nicht verfügbar sein.");
+        }
+
+        const dbRequest = indexedDB.open("ImageDatabase", 1);
+        let db;
+        let images = { Frage: null, Antwort: null };
+        let groups = [];
+
+        dbRequest.onupgradeneeded = (event) => {
+            db = event.target.result;
+            const objectStoreNames = Array.from(db.objectStoreNames);
+            if (!objectStoreNames.includes("Frage")) {
+                db.createObjectStore("Frage", { keyPath: "id" });
+            }
+            if (!objectStoreNames.includes("Antwort")) {
+                db.createObjectStore("Antwort", { keyPath: "id" });
+            }
+            if (!objectStoreNames.includes("Metadata")) {
+                db.createObjectStore("Metadata", { keyPath: "id" });
+            }
+        };
+
+        dbRequest.onsuccess = (event) => {
+            db = event.target.result;
+            populateGroupSelect();
+            loadNextCard();
+        };
+
+        dbRequest.onerror = (event) => {
+            console.error("Fehler beim Öffnen der IndexedDB:", event.target.error);
+        };
+
+        function getEntryById(storeName, id, callback) {
+            const transaction = db.transaction(storeName, "readonly");
+            const store = transaction.objectStore(storeName);
+            const request = store.get(id);
+
+            request.onsuccess = () => {
+                callback(request.result);
+            };
+
+            request.onerror = (event) => {
+                console.error(`Fehler beim Abrufen der Daten aus ${storeName}:`, event.target.error);
+            };
+        }
+
+        function getCardWithLowestPassed(callback) {
+            const transaction = db.transaction("Metadata", "readonly");
+            const store = transaction.objectStore("Metadata");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const entries = request.result;
+                if (entries.length > 0) {
+                    const lowestPassedCard = entries.reduce((min, entry) => entry.passed < min.passed ? entry : min, entries[0]);
+                    callback(lowestPassedCard);
+                }
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
+            };
+        }
+
+        function populateGroupSelect() {
+            if (!db) {
+                console.error("Datenbank ist nicht initialisiert.");
+                return;
+            }
+
+            const transaction = db.transaction("Metadata", "readonly");
+            const store = transaction.objectStore("Metadata");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const groups = new Set(
+                    request.result
+                        .map(metadata => metadata.group)
+                        .filter(group => group !== undefined && group !== null && group.trim() !== "")
+                );
+                const groupSelect = document.getElementById("groupSelect");
+                groupSelect.innerHTML = '<option value="all" selected>All</option>'; // Clear existing options and add default
+                groups.forEach(group => {
+                    const option = document.createElement("option");
+                    option.value = group;
+                    option.textContent = group;
+                    groupSelect.appendChild(option);
+                });
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Gruppen:", event.target.error);
+            };
+        }
+
+
+        function getFilteredCardWithLowestPassed(selectedGroup, callback) {
+            const transaction = db.transaction("Metadata", "readonly");
+            const store = transaction.objectStore("Metadata");
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                let entries = request.result;
+                if (selectedGroup !== "all") {
+                    entries = entries.filter(entry => entry.group === selectedGroup);
+                }
+                if (entries.length > 0) {
+                    const lowestPassedCard = entries.reduce((min, entry) => entry.passed < min.passed ? entry : min, entries[0]);
+                    callback(lowestPassedCard);
+                } else {
+                    callback();
+                }
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
+            };
+        }
+
+        document.getElementById("groupSelect").addEventListener("change", () => {
+            loadNextCard();
+        });
+        function loadNextCard() {
+            const selectedGroup = document.getElementById("groupSelect").value;
+
+            getFilteredCardWithLowestPassed(selectedGroup, (metadata) => {
+                if (!metadata) {
+                    // No flashcards found, show manual image and placeholder
+                    document.getElementById("cardFront").innerHTML = `<img src="/image/manual.jpg" alt="Manual" style="width:100%; height:auto;">`;
+                    document.getElementById("cardBack").innerHTML = `<p>Flip to start creating your first flashcard!</p>`;
+                    return;
+                }
+
+                currentCardId = metadata.id;
+                console.log("Frage");
+                // Fetch front (Frage) and handle missing entries
+                getEntryById("Frage", metadata.id, (frage) => {
+                    console.log("Frage", frage);
+                    if (frage && frage.image) {
+                        document.getElementById("cardFront").innerHTML = `<img src="${frage.image}" alt="Frage" style="width:100%; height:auto;">`;
+                    } else {
+                        document.getElementById("cardFront").innerHTML = `<img src="/manual.jpg" alt="Manual" style="width:100%; height:auto;">`;
+                    }
+                });
+
+                // Fetch back (Antwort) and handle missing entries
+                getEntryById("Antwort", metadata.id, (antwort) => {
+                    if (antwort && antwort.image) {
+                        document.getElementById("cardBack").innerHTML = `<img src="${antwort.image}" alt="Antwort" style="width:100%; height:auto;">`;
+                    } else {
+                        document.getElementById("cardBack").innerHTML = `<p>No answer available. Start creating your flashcards!</p>`;
+                    }
+                });
+            });
+        }
+
+
+
+        document.getElementById("card").addEventListener("click", () => {
+            const flipCard = document.getElementById("flipCard");
+            flipCard.classList.toggle("flipped");
+        });
+
+        function updateMetadata(difficulty) {
+            const transaction = db.transaction("Metadata", "readwrite");
+            const store = transaction.objectStore("Metadata");
+            const request = store.get(currentCardId);
+
+            request.onsuccess = () => {
+                const metadata = request.result;
+                if (metadata) {
+                    metadata.views += 1;
+                    metadata.passed = (metadata.passed + difficulty) / 2;
+                    store.put(metadata);
+                }
+                loadNextCard();
+            };
+
+            request.onerror = (event) => {
+                console.error("Fehler beim Aktualisieren der Metadaten:", event.target.error);
+            };
+        }
+
+        document.getElementById("easyButton").addEventListener("click", () => updateMetadata(3));
+        document.getElementById("mediumButton").addEventListener("click", () => updateMetadata(2));
+        document.getElementById("hardButton").addEventListener("click", () => updateMetadata(1));
+
+
+    </script>
+</body>
+<footer>
+    <hr class="styled-line">
+    <form action="https://www.paypal.com/donate" method="post" target="_top">
+        <input type="hidden" name="hosted_button_id" value="V2QVTT6TSDWYC" />
+        <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_donate_LG.gif" border="0" name="submit"
+            title="PayPal - The safer, easier way to pay online!" alt="Donate with PayPal button" />
+    </form>
+    <br>
+    <a href="https://github.com/Humus4theWin/web-flashcards/" target="_blank" rel="noopener noreferrer">
+        Visit GitHub Repository
+    </a>
+
+
+    <p>Linus Pfoch</p>
+    <p>Lindenstr. 14, 16548 Glienicke DE</p>
+    <p>info@web-flashcards.com</p>
+</footer>
+
+</html>
