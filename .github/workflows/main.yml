@@ -87,7 +87,7 @@ jobs:
 
   deploy:
     name: Job_2 - Deploy aab to playstore
-    needs: build
+    needs: build-and-deploy-app
     runs-on: ubuntu-latest
     steps:
       - name: Download app bundle from artifact
