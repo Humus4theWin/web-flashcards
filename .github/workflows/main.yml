@@ -27,10 +27,6 @@ jobs:
           # Delete all existing files in the root folder on the FTP server
           mdelete *
           
-          # Navigate to the Frontend folder locally and upload its content to the root of the server
-          lcd Frontend
-          mput *
-          
           # Navigate to the image folder locally and upload its content to the root of the server
           lcd image
           mput *
