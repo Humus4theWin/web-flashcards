@@ -47,6 +47,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Copy Frontend Files to Assets Folder
+        run: |
+          mkdir -p Android/app/src/main/assets
+          cp -r Frontend/* Android/app/src/main/assets/
+
       - name: Get mapskey.properties from secrets
         run: >-
           echo "${{ secrets.MAPS_API_KEY }}" >
@@ -110,5 +115,5 @@ jobs:
         with:
           serviceAccountJsonPlainText: "${{ secrets.SERVICE_ACCOUNT_JSON }}"
           packageName: com.uxstate.countriespad
-          releaseFiles: "${{ github.workspace }}/Android/app/build/outputs/bundle/release/app-release.aab"
+          releaseFiles: "${{ github.workspace }}/app-release.aab"
           track: production
