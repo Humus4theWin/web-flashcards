@@ -3,15 +3,14 @@
 
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" type="image/x-icon" href="/image/favicon.ico">
-    <link rel="stylesheet" href="style.css">   
+    <link rel="icon" type="image/x-icon" href="image/favicon.ico">
+    <link rel="stylesheet" href="style.css">
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manage your card decks</title>
 
 </head>
 <style>
-
     .tool-sections {
         display: flex;
         flex-wrap: wrap;
@@ -94,36 +93,8 @@
         color: #666;
     }
 
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-        background-color: white;
-    }
 
-    th,
-    td {
-        border: 1px solid #ddd;
-        padding: 10px;
-        text-align: center;
-    }
 
-    th {
-        background-color: #f4f4f4;
-        font-size: 16px;
-    }
-
-    td {
-        font-size: 14px;
-    }
-
-    img {
-        max-width: 150px;
-        max-height: 100px;
-        cursor: pointer;
-        border-radius: 5px;
-        transition: transform 0.2s;
-    }
 
     img:hover {
         transform: scale(1.05);
@@ -147,15 +118,118 @@
         max-height: 90%;
     }
 
+    /* Card container */
+    .card-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        justify-content: center;
+    }
 
+    /* Individual card design */
+    .card {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    /* Card content sections */
+    .card .card-header {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .card .card-content {
+        display: flex;
+        flex-direction: row;
+        /* Align items horizontally */
+        gap: 20px;
+        /* Add space between question and answer */
+        justify-content: space-between;
+        /* Distribute space evenly */
+        align-items: center;
+        /* Align items vertically */
+    }
+
+    .card .card-content .label {
+        font-size: 14px;
+        color: #666;
+        text-align: center;
+        /* Center the labels under the images */
+        margin-top: 5px;
+        flex: 1;
+        /* Allow equal space for both sections */
+    }
+
+    .card .card-content img {
+        max-width: 100%;
+        /* Adjust width as needed */
+        max-height: 250px;
+        /* Adjust height as needed */
+        border-radius: 5px;
+        cursor: pointer;
+        transition: transform 0.2s;
+        display: block;
+        margin: 0 auto;
+        /* Center the image */
+    }
+
+
+    .card .card-content img:hover {
+        transform: scale(1.05);
+    }
+
+    .card .card-content .label {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .card .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    /* Button styles */
+    .card button {
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .card button:hover {
+        background-color: #0056b3;
+    }
+
+    .card button.red {
+        background-color: #ff4d4d;
+    }
+
+    .card button.red:hover {
+        background-color: #e60000;
+    }
+
+   
 </style>
 
 <body>
     <header>
         <nav>
-            <a href="/index.html">Learn</a>
-            <a href="/create.html">Create</a>
-            <a href="/cards.html" class="active">Cards</a>
+            <a href="index.html">Learn</a>
+            <a href="create.html">Create</a>
+            <a href="cards.html" class="active">Cards</a>
         </nav>
         <hr class="styled-line">
     </header>
@@ -194,19 +268,8 @@
 
 
     <h1>List of all cards</h1>
-    <table>
-        <thead>
-            <tr>
-                <th>Question</th>
-                <th>Answer</th>
-                <th>Deck</th>
-                <th>Views</th>
-                <th>Score</th>
-                <th>Delete</th>
-            </tr>
-        </thead>
-        <tbody id="cardList"></tbody>
-    </table>
+    <div id="cardList" class="card-container"></div>
+
 
     <div id="fullscreenViewer" class="fullscreen" style="display: none;">
         <img id="fullscreenImage" src="" alt="Vollbildansicht">
@@ -254,8 +317,8 @@
                 const metadataList = metadataRequest.result;
                 metadataList.sort((a, b) => a.passed - b.passed);
 
-                const tableBody = document.getElementById("cardList");
-                tableBody.innerHTML = "";
+                const cardContainer = document.getElementById("cardList");
+                cardContainer.innerHTML = "";
 
                 metadataList.forEach((metadata) => {
                     const frageRequest = frageStore.get(metadata.id);
@@ -266,36 +329,75 @@
                             const frage = frageRequest.result;
                             const antwort = antwortRequest.result;
 
-                            const row = document.createElement("tr");
+                            // Create card element
+                            const card = document.createElement("div");
+                            card.classList.add("card");
 
-                            const frageCell = document.createElement("td");
-                            frageCell.innerHTML = frage ? `<img src="${frage.image}" alt="Frage" onclick="showFullscreen('${frage.image}')">` : "Keine Frage gefunden";
-                            row.appendChild(frageCell);
+                            // Add card header
+                            const header = document.createElement("div");
+                            header.classList.add("card-header");
+                            header.textContent = `Deck: ${metadata.group}`;
+                            card.appendChild(header);
 
-                            const antwortCell = document.createElement("td");
-                            antwortCell.innerHTML = antwort ? `<img src="${antwort.image}" alt="Antwort" onclick="showFullscreen('${antwort.image}')">` : "Keine Antwort gefunden";
-                            row.appendChild(antwortCell);
+                            // Add card content
+                            const content = document.createElement("div");
+                            content.classList.add("card-content");
 
-                            const group = document.createElement("td");
-                            group.textContent = metadata.group;
-                            row.appendChild(group);
+                            // Question section
+                            const questionSection = document.createElement("div");
+                            const frageLabel = document.createElement("div");
+                            frageLabel.classList.add("label");
+                            frageLabel.textContent = "Question:";
+                            questionSection.appendChild(frageLabel);
 
-                            const viewsCell = document.createElement("td");
-                            viewsCell.textContent = metadata.views;
-                            row.appendChild(viewsCell);
+                            const frageImage = document.createElement("img");
+                            frageImage.src = frage ? frage.image : "";
+                            frageImage.alt = "Question Image";
+                            frageImage.onclick = () => showFullscreen(frageImage.src);
+                            questionSection.appendChild(frageImage);
 
-                            const passedCell = document.createElement("td");
-                            passedCell.textContent = metadata.passed.toFixed(2);
-                            row.appendChild(passedCell);
+                            content.appendChild(questionSection);
 
-                            const actionCell = document.createElement("td");
+                            // Answer section
+                            const answerSection = document.createElement("div");
+                            const antwortLabel = document.createElement("div");
+                            antwortLabel.classList.add("label");
+                            antwortLabel.textContent = "Answer:";
+                            answerSection.appendChild(antwortLabel);
+
+                            const antwortImage = document.createElement("img");
+                            antwortImage.src = antwort ? antwort.image : "";
+                            antwortImage.alt = "Answer Image";
+                            antwortImage.onclick = () => showFullscreen(antwortImage.src);
+                            answerSection.appendChild(antwortImage);
+
+                            content.appendChild(answerSection);
+
+                            card.appendChild(content);
+
+
+                            // Add card footer
+                            const footer = document.createElement("div");
+                            footer.classList.add("card-footer");
+
+                            const views = document.createElement("div");
+                            views.textContent = `Views: ${metadata.views}`;
+                            footer.appendChild(views);
+
+                            const passed = document.createElement("div");
+                            passed.textContent = `Score: ${metadata.passed.toFixed(2)}`;
+                            footer.appendChild(passed);
+
                             const deleteButton = document.createElement("button");
-                            deleteButton.textContent = "🗑";
-                            deleteButton.addEventListener("click", () => deleteCard(metadata.id));
-                            actionCell.appendChild(deleteButton);
-                            row.appendChild(actionCell);
+                            deleteButton.classList.add("red");
+                            deleteButton.textContent = "🗑 Delete";
+                            deleteButton.onclick = () => deleteCard(metadata.id);
+                            footer.appendChild(deleteButton);
 
-                            tableBody.appendChild(row);
+                            card.appendChild(footer);
+
+                            // Append card to container
+                            cardContainer.appendChild(card);
                         };
                     };
                 });
@@ -305,6 +407,13 @@
                 console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
             };
         }
+
+
+
+        metadataRequest.onerror = (event) => {
+            console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
+        };
+
 
         function deleteCard(id) {
             const transaction = db.transaction(["Frage", "Antwort", "Metadata"], "readwrite");
