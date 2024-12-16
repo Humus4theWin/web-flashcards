@@ -1,32 +1,20 @@
-package com.example.ankyx;
+package com.picoware.ankyx;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.provider.AlarmClock;
-import android.view.Menu;
-import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.drawerlayout.widget.DrawerLayout;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
 
-import com.example.ankyx.databinding.ActivityMainBinding;
-import com.google.android.material.navigation.NavigationView;
-import com.google.android.material.snackbar.Snackbar;
+import com.picoware.ankyx.databinding.ActivityMainBinding;
 
 import java.util.HashMap;
 import java.util.Map;

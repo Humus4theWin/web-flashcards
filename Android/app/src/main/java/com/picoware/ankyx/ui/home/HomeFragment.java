@@ -1,4 +1,4 @@
-package com.example.ankyx.ui.home;
+package com.picoware.ankyx.ui.home;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.ankyx.databinding.FragmentHomeBinding;
+import com.picoware.ankyx.databinding.FragmentHomeBinding;
 
 public class HomeFragment extends Fragment {
 

@@ -1,4 +1,4 @@
-package com.example.ankyx.ui.slideshow;
+package com.picoware.ankyx.ui.slideshow;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;

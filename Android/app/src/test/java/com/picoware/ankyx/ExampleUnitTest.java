@@ -1,4 +1,4 @@
-package com.example.ankyx;
+package com.picoware.ankyx;
 
 import static org.junit.Assert.assertEquals;
 

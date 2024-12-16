@@ -1,4 +1,4 @@
-package com.example.ankyx.ui.gallery;
+package com.picoware.ankyx.ui.gallery;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.ankyx.databinding.FragmentGalleryBinding;
+import com.picoware.ankyx.databinding.FragmentGalleryBinding;
 
 public class GalleryFragment extends Fragment {
 

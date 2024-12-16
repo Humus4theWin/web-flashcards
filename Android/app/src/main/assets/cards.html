@@ -221,8 +221,6 @@
     .card button.red:hover {
         background-color: #e60000;
     }
-
-   
 </style>
 
 <body>
@@ -407,13 +405,14 @@
             metadataRequest.onerror = (event) => {
                 console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
             };
+            metadataRequest.onerror = (event) => {
+                console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
+            };
         }
 
 
 
-        metadataRequest.onerror = (event) => {
-            console.error("Fehler beim Abrufen der Metadaten:", event.target.error);
-        };
+
 
 
         function deleteCard(id) {

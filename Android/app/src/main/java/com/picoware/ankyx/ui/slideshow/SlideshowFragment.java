@@ -1,4 +1,4 @@
-package com.example.ankyx.ui.slideshow;
+package com.picoware.ankyx.ui.slideshow;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
-import com.example.ankyx.databinding.FragmentSlideshowBinding;
+import com.picoware.ankyx.databinding.FragmentSlideshowBinding;
 
 public class SlideshowFragment extends Fragment {
 

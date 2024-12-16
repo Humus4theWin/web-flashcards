@@ -1,4 +1,4 @@
-package com.example.ankyx.ui.home;
+package com.picoware.ankyx.ui.home;
 
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
