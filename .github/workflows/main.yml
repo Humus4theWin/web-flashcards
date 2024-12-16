@@ -24,19 +24,15 @@ jobs:
         run: |
           ftp -inv $FTP_SERVER <<EOF
           user $FTP_USERNAME $FTP_PASSWORD
-          # Delete all files in the root directory on the FTP server
+          # Delete all existing files in the root folder on the FTP server
           mdelete *
           
-          # Navigate to the Frontend folder locally and upload all files
+          # Navigate to the Frontend folder locally and upload its content to the root of the server
           lcd Frontend
-          mkdir Frontend
-          cd Frontend
           mput *
           
-          # Navigate to the images subfolder locally and upload all files
+          # Navigate to the image folder locally and upload its content to the root of the server
           lcd image
-          mkdir image
-          cd image
           mput *
           
           bye
