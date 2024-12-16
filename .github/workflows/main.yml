@@ -13,7 +13,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Install LFTP Client
+      - name: Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
 
       - name: Upload Repository Content to FTP Server
@@ -23,7 +23,7 @@ jobs:
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
         run: |
           lftp -c "
-          open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER
-          mirror -R Frontend /path/to/remote/directory
+          open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER;
+          mirror -R --delete --verbose Frontend /;
           bye
           "
