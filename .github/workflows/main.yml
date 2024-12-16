@@ -110,5 +110,5 @@ jobs:
         with:
           serviceAccountJsonPlainText: "${{ secrets.SERVICE_ACCOUNT_JSON }}"
           packageName: com.uxstate.countriespad
-          releaseFiles: "${{ github.workspace }}/Android/app-release.aab"
+          releaseFiles: "${{ github.workspace }}/Android/app/build/outputs/bundle/release/app-release.aab"
           track: production
