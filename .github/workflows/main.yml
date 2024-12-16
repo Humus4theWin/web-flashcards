@@ -24,8 +24,8 @@ jobs:
         run: |
           ftp -inv $FTP_SERVER <<EOF
           user $FTP_USERNAME $FTP_PASSWORD
-          cd /path/to/your/destination
           mdelete *
+          lcd Frontend
           mput *
           bye
           EOF
